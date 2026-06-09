@@ -524,3 +524,168 @@ export interface RestockPredictionItem {
 export interface SubscriptionWithDeliveries extends SubscriptionPlan {
   deliveries: DeliveryInfo[];
 }
+
+export type ScheduleSourceType = 'formula' | 'record' | 'subscription';
+export type ScheduleFrequencyType = 'daily' | 'weekly' | 'monthly' | 'custom';
+export type ScheduleStatus = 'active' | 'paused' | 'completed';
+export type RiskLevel = 'info' | 'warning' | 'danger';
+export type RiskType = 'high_sensitivity' | 'subscription_review' | 'no_feedback' | 'usage_conflict' | 'long_no_feedback' | 'formula_conflict';
+
+export interface Schedule {
+  id: number;
+  title: string;
+  description: string | null;
+  sourceType: ScheduleSourceType;
+  source_type: ScheduleSourceType;
+  sourceId: number | null;
+  source_id: number | null;
+  usagePart: string | null;
+  usage_part: string | null;
+  frequencyType: ScheduleFrequencyType;
+  frequency_type: ScheduleFrequencyType;
+  frequencyValue: number;
+  frequency_value: number;
+  frequencyDays: number[];
+  frequency_days: number[];
+  startDate: string;
+  start_date: string;
+  endDate: string | null;
+  end_date: string | null;
+  reminderTime: string | null;
+  reminder_time: string | null;
+  reminderEnabled: boolean;
+  reminder_enabled: number;
+  formulaId: number | null;
+  formula_id: number | null;
+  subscriptionId: number | null;
+  subscription_id: number | null;
+  status: ScheduleStatus;
+  createdAt: string;
+  created_at: string;
+  updatedAt: string;
+  updated_at: string;
+  formulaName?: string;
+  formula_name?: string;
+  subscriptionName?: string;
+  subscription_name?: string;
+  completionCount?: number;
+  lastCompletionDate?: string;
+  completions?: ScheduleCompletion[];
+  scheduledDate?: string;
+  isToday?: boolean;
+  isCompleted?: boolean;
+  completion?: ScheduleCompletion;
+}
+
+export interface ScheduleCreateInput {
+  title: string;
+  description?: string | null;
+  sourceType: ScheduleSourceType;
+  sourceId?: number | null;
+  usagePart?: string | null;
+  frequencyType: ScheduleFrequencyType;
+  frequencyValue?: number;
+  frequencyDays?: number[];
+  startDate: string;
+  endDate?: string | null;
+  reminderTime?: string | null;
+  reminderEnabled?: boolean;
+  formulaId?: number | null;
+  subscriptionId?: number | null;
+  status?: ScheduleStatus;
+}
+
+export interface ScheduleUpdateInput {
+  title?: string;
+  description?: string | null;
+  sourceType?: ScheduleSourceType;
+  sourceId?: number | null;
+  usagePart?: string | null;
+  frequencyType?: ScheduleFrequencyType;
+  frequencyValue?: number;
+  frequencyDays?: number[];
+  startDate?: string;
+  endDate?: string | null;
+  reminderTime?: string | null;
+  reminderEnabled?: boolean;
+  formulaId?: number | null;
+  subscriptionId?: number | null;
+  status?: ScheduleStatus;
+}
+
+export interface ScheduleCompletion {
+  id: number;
+  scheduleId: number;
+  schedule_id: number;
+  scheduledDate: string;
+  scheduled_date: string;
+  completedAt: string;
+  completed_at: string;
+  notes: string | null;
+  rating: number | null;
+  createdAt: string;
+  created_at: string;
+}
+
+export interface ScheduleCompletionInput {
+  scheduledDate?: string;
+  notes?: string | null;
+  rating?: number | null;
+}
+
+export interface TodayReminderItem extends Schedule {
+  isCompleted: boolean;
+  completion?: ScheduleCompletion;
+}
+
+export interface TodayReminders {
+  date: string;
+  total: number;
+  completed: number;
+  pending: number;
+  reminders: TodayReminderItem[];
+}
+
+export interface RiskWarning {
+  type: RiskType;
+  level: RiskLevel;
+  scheduleId?: number;
+  scheduleTitle?: string;
+  formulaId?: number;
+  formulaName?: string;
+  formulaIds?: number[];
+  formulaNames?: string[];
+  subscriptionId?: number;
+  planName?: string;
+  usagePart?: string;
+  frequencyType?: ScheduleFrequencyType;
+  weeklyUseCount?: number;
+  avgSensitivity?: number;
+  sensitivityCount?: number;
+  sensitiveIngredients?: string[];
+  nextDeliveryDate?: string;
+  daysUntilDelivery?: number;
+  unreviewedDeliveries?: number;
+  sourceType?: ScheduleSourceType;
+  completionCount?: number;
+  lastCompletionDate?: string;
+  daysSinceStart?: number;
+  message: string;
+}
+
+export interface RiskWarningsResponse {
+  total: number;
+  dangerCount: number;
+  warningCount: number;
+  infoCount: number;
+  risks: RiskWarning[];
+}
+
+export interface CalendarDay {
+  date: string;
+  weekday: number;
+  isToday: boolean;
+  hasSchedules: boolean;
+  scheduleCount: number;
+  schedules: Schedule[];
+}

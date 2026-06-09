@@ -40,6 +40,12 @@
               >
                 <component :is="item.icon" class="w-5 h-5" />
                 <span>{{ item.label }}</span>
+                <span
+                  v-if="getBadgeCount(item) > 0"
+                  class="ml-auto min-w-[20px] h-5 px-1.5 bg-error text-white text-xs font-medium rounded-full flex items-center justify-center"
+                >
+                  {{ getBadgeCount(item) > 99 ? '99+' : getBadgeCount(item) }}
+                </span>
               </router-link>
             </li>
           </ul>
@@ -108,7 +114,10 @@
           </div>
 
           <div class="flex items-center gap-3">
-            <button class="p-2 rounded-lg hover:bg-bg-soft transition-colors duration-fast relative">
+            <button
+              @click="router.push('/reminders')"
+              class="p-2 rounded-lg hover:bg-bg-soft transition-colors duration-fast relative"
+            >
               <svg
                 class="w-5 h-5 text-text-soft"
                 fill="none"
@@ -122,7 +131,12 @@
                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                 />
               </svg>
-              <span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+              <span
+                v-if="unreadCount > 0"
+                class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center"
+              >
+                {{ unreadCount > 99 ? '99+' : unreadCount }}
+              </span>
             </button>
             <button class="p-2 rounded-lg hover:bg-bg-soft transition-colors duration-fast">
               <svg
@@ -172,13 +186,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, h, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useSchedulesStore } from '@/stores/schedules'
 
 const route = useRoute()
+const router = useRouter()
 const sidebarOpen = ref(false)
+const schedulesStore = useSchedulesStore()
+let refreshTimer: number | null = null
 
-const navItems = [
+interface NavItem {
+  path: string
+  label: string
+  icon: () => ReturnType<typeof h>
+  badge?: number | (() => number)
+}
+
+const reminderBadge = computed(() => schedulesStore.stats?.totalPending || 0)
+
+const navItems: NavItem[] = [
   {
     path: '/formulas',
     label: '配方库',
@@ -280,6 +307,24 @@ const navItems = [
         d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
       })
     ])
+  },
+  {
+    path: '/reminders',
+    label: '提醒中心',
+    badge: () => reminderBadge.value,
+    icon: () => h('svg', {
+      class: 'w-5 h-5',
+      fill: 'none',
+      stroke: 'currentColor',
+      viewBox: '0 0 24 24'
+    }, [
+      h('path', {
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'stroke-width': '2',
+        d: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'
+      })
+    ])
   }
 ]
 
@@ -292,11 +337,44 @@ const isActive = (path: string) => {
   return route.path.startsWith(path)
 }
 
+const getBadgeCount = (item: NavItem) => {
+  if (typeof item.badge === 'function') {
+    return item.badge()
+  }
+  return item.badge || 0
+}
+
 const handleNavClick = () => {
   if (window.innerWidth < 1024) {
     sidebarOpen.value = false
   }
 }
+
+const unreadCount = computed(() => {
+  return (schedulesStore.stats?.pendingToday || 0) + (schedulesStore.stats?.riskCount || 0)
+})
+
+const refreshNotifications = async () => {
+  try {
+    await Promise.all([
+      schedulesStore.fetchTodayReminders(),
+      schedulesStore.fetchRiskWarnings(),
+    ])
+  } catch (e) {
+    console.error('刷新提醒失败', e)
+  }
+}
+
+onMounted(() => {
+  refreshNotifications()
+  refreshTimer = window.setInterval(refreshNotifications, 60000)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+  }
+})
 </script>
 
 <style scoped>

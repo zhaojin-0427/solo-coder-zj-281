@@ -26,6 +26,15 @@ import type {
   DeliveryPlan,
   DeliveryInfo,
   SubscriptionStatus,
+  Schedule,
+  ScheduleCreateInput,
+  ScheduleUpdateInput,
+  ScheduleCompletion,
+  ScheduleCompletionInput,
+  TodayReminders,
+  RiskWarningsResponse,
+  CalendarDay,
+  ScheduleSourceType,
 } from '../types';
 
 export const ingredients = {
@@ -176,6 +185,78 @@ export const subscriptions = {
   },
 };
 
+export const schedules = {
+  getList: (params?: {
+    sourceType?: ScheduleSourceType;
+    formulaId?: number;
+    subscriptionId?: number;
+    status?: string;
+  }) => {
+    return get<Schedule[]>('/api/schedules', { params });
+  },
+
+  getDetail: (id: number) => {
+    return get<Schedule>(`/api/schedules/${id}`);
+  },
+
+  create: (data: ScheduleCreateInput) => {
+    return post<Schedule>('/api/schedules', data);
+  },
+
+  update: (id: number, data: ScheduleUpdateInput) => {
+    return put<Schedule>(`/api/schedules/${id}`, data);
+  },
+
+  remove: (id: number) => {
+    return del<{ id: number }>(`/api/schedules/${id}`);
+  },
+
+  getTodayReminders: () => {
+    return get<TodayReminders>('/api/schedules/today/reminders');
+  },
+
+  getRiskWarnings: () => {
+    return get<RiskWarningsResponse>('/api/schedules/risks/warnings');
+  },
+
+  getCalendar: (params?: {
+    startDate?: string;
+    endDate?: string;
+    sourceType?: ScheduleSourceType;
+    formulaId?: number;
+    subscriptionId?: number;
+  }) => {
+    return get<CalendarDay[]>('/api/schedules/calendar/view', { params });
+  },
+
+  getNext30Days: (params?: {
+    sourceType?: ScheduleSourceType;
+    formulaId?: number;
+    subscriptionId?: number;
+  }) => {
+    return get<CalendarDay[]>('/api/schedules/calendar/next30', { params });
+  },
+
+  complete: (id: number, data: ScheduleCompletionInput) => {
+    return post<ScheduleCompletion>(`/api/schedules/${id}/complete`, data);
+  },
+
+  cancelComplete: (id: number, scheduledDate?: string) => {
+    const params = scheduledDate ? { scheduledDate } : undefined;
+    return del<{ message: string }>(`/api/schedules/${id}/complete`, { params });
+  },
+
+  getRange: (params: {
+    startDate: string;
+    endDate: string;
+    sourceType?: ScheduleSourceType;
+    formulaId?: number;
+    subscriptionId?: number;
+  }) => {
+    return get<Schedule[]>('/api/schedules/range', { params });
+  },
+};
+
 export default {
   ingredients,
   formulas,
@@ -184,4 +265,5 @@ export default {
   statistics,
   candles,
   subscriptions,
+  schedules,
 };

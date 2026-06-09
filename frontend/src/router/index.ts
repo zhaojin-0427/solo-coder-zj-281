@@ -8,6 +8,7 @@ import Analysis from '@/pages/Analysis.vue'
 import Statistics from '@/pages/Statistics.vue'
 import SubscriptionList from '@/pages/SubscriptionList.vue'
 import SubscriptionDetail from '@/pages/SubscriptionDetail.vue'
+import ReminderCenter from '@/pages/ReminderCenter.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -58,6 +59,11 @@ const routes: RouteRecordRaw[] = [
     path: '/statistics',
     name: 'statistics',
     component: Statistics
+  },
+  {
+    path: '/reminders',
+    name: 'reminders',
+    component: ReminderCenter
   }
 ]
 

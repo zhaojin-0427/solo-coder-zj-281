@@ -23,6 +23,9 @@ import type { Formula, FormulaIngredient, FormulaIngredientInput, Ingredient, Fo
 import { cn } from '@/lib/utils'
 import FormulaReviewCard from '@/components/Common/FormulaReviewCard.vue'
 import RiskWarningList from '@/components/Common/RiskWarningList.vue'
+import ScheduleCreateModal from '@/components/Schedule/ScheduleCreateModal.vue'
+import ScheduleCalendar from '@/components/Schedule/ScheduleCalendar.vue'
+import { useSchedulesStore } from '@/stores/schedules'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +42,9 @@ const showRecordModal = ref(false)
 const formulaReview = ref<FormulaReviewSummary | null>(null)
 const reviewLoading = ref(false)
 const riskWarnings = ref<FormulaRiskWarning[]>([])
+const schedulesStore = useSchedulesStore()
+const showScheduleModal = ref(false)
+const showScheduleCalendar = ref(false)
 
 const editName = ref('')
 const editDescription = ref<string | null>('')
@@ -634,7 +640,7 @@ onMounted(() => {
           :loading="reviewLoading"
         />
 
-        <div v-if="!isEditMode" class="flex gap-3">
+        <div v-if="!isEditMode" class="flex flex-col sm:flex-row gap-3">
           <button
             @click="showRecordModal = true"
             class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl shadow-lg shadow-emerald-200 transition-all hover:shadow-xl"
@@ -642,6 +648,32 @@ onMounted(() => {
             <Plus :size="18" />
             <span>新增使用记录</span>
           </button>
+          <button
+            @click="showScheduleModal = true"
+            class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-xl shadow-lg shadow-violet-200 transition-all hover:shadow-xl"
+          >
+            <Calendar :size="18" />
+            <span>创建使用计划</span>
+          </button>
+          <button
+            @click="showScheduleCalendar = !showScheduleCalendar"
+            :class="[
+              'flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-all',
+              showScheduleCalendar
+                ? 'bg-violet-100 text-violet-700 border-2 border-violet-300'
+                : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+            ]"
+          >
+            <Calendar :size="18" />
+            <span>{{ showScheduleCalendar ? '隐藏日程' : '查看日程' }}</span>
+          </button>
+        </div>
+
+        <div v-if="showScheduleCalendar && !isEditMode" class="mt-6">
+          <ScheduleCalendar
+            :formula-id="formulaId"
+            source-type="formula"
+          />
         </div>
       </div>
     </div>
@@ -702,5 +734,16 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <ScheduleCreateModal
+      v-model:visible="showScheduleModal"
+      :prefill-data="{
+        title: formula ? `使用「${formula.name}」` : '',
+        sourceType: 'formula',
+        formulaId: formulaId,
+        usagePart: formula?.purpose || '',
+      }"
+      @success="schedulesStore.fetchNext30Days({ formulaId, sourceType: 'formula' })"
+    />
   </div>
 </template>

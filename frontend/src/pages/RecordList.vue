@@ -1,26 +1,31 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Plus, Calendar, Droplets, Zap, Heart, FileText, User, Filter, ChevronDown, Smile } from 'lucide-vue-next'
+import { Plus, Calendar, Droplets, Zap, Heart, FileText, User, Filter, ChevronDown, Smile, Repeat } from 'lucide-vue-next'
 import StarRating from '@/components/Common/StarRating.vue'
 import TagBadge from '@/components/Common/TagBadge.vue'
 import LoadingSpinner from '@/components/Common/LoadingSpinner.vue'
 import EmptyState from '@/components/Common/EmptyState.vue'
 import RecordCreateModal from '@/components/Record/RecordCreateModal.vue'
 import FormulaReviewCard from '@/components/Common/FormulaReviewCard.vue'
+import ScheduleCreateModal from '@/components/Schedule/ScheduleCreateModal.vue'
 import { useRecordsStore } from '@/stores/records'
 import { useFormulasStore } from '@/stores/formulas'
+import { useSchedulesStore } from '@/stores/schedules'
 import { formulas } from '@/api'
-import type { FormulaReviewSummary } from '@/types'
+import type { FormulaReviewSummary, UsageRecord } from '@/types'
 import { cn } from '@/lib/utils'
 
 const recordsStore = useRecordsStore()
 const formulasStore = useFormulasStore()
+const schedulesStore = useSchedulesStore()
 
 const showCreateModal = ref(false)
 const selectedFormulaId = ref<number | null>(null)
 const showFilterDropdown = ref(false)
 const formulaReview = ref<FormulaReviewSummary | null>(null)
 const reviewLoading = ref(false)
+const showScheduleModal = ref(false)
+const prefillRecord = ref<UsageRecord | null>(null)
 
 const skinConditionColors: Record<string, string> = {
   '正常': 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -102,6 +107,29 @@ const formatDate = (dateStr: string) => {
 
 const handleCreateSuccess = () => {
   recordsStore.fetchList()
+}
+
+const handleScheduleSuccess = () => {
+  prefillRecord.value = null
+  schedulesStore.fetchList()
+}
+
+const handleCreateScheduleFromRecord = (record: UsageRecord) => {
+  prefillRecord.value = record
+  showScheduleModal.value = true
+}
+
+const getSchedulePrefillData = () => {
+  if (!prefillRecord.value) return undefined
+  return {
+    title: `定期使用「${prefillRecord.value.formula?.name || '配方'}」`,
+    description: prefillRecord.value.notes || '',
+    sourceType: 'record' as const,
+    sourceId: prefillRecord.value.id,
+    formulaId: prefillRecord.value.formula_id,
+    frequencyType: 'daily' as const,
+    startDate: new Date().toISOString().split('T')[0],
+  }
 }
 
 const initDefaultSelection = () => {
@@ -315,6 +343,16 @@ onMounted(async () => {
                       {{ record.skin_condition }}
                     </span>
                   </div>
+
+                  <div class="mt-4 pt-4 border-t border-stone-100">
+                    <button
+                      @click="handleCreateScheduleFromRecord(record)"
+                      class="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-700 font-medium transition-colors"
+                    >
+                      <Repeat :size="14" />
+                      <span>基于此记录创建周期使用计划</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -326,6 +364,12 @@ onMounted(async () => {
     <RecordCreateModal
       v-model:visible="showCreateModal"
       @success="handleCreateSuccess"
+    />
+
+    <ScheduleCreateModal
+      v-model:visible="showScheduleModal"
+      :prefill-data="getSchedulePrefillData()"
+      @success="handleScheduleSuccess"
     />
   </div>
 </template>

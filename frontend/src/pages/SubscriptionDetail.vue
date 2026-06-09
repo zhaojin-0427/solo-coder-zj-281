@@ -20,19 +20,26 @@ import {
   Settings,
   Clock,
   Sparkles,
+  Repeat,
+  Plus,
 } from 'lucide-vue-next'
 import LoadingSpinner from '@/components/Common/LoadingSpinner.vue'
 import DeliveryPlanCard from '@/components/Subscription/DeliveryPlanCard.vue'
+import ScheduleCreateModal from '@/components/Schedule/ScheduleCreateModal.vue'
+import ScheduleCalendar from '@/components/Schedule/ScheduleCalendar.vue'
 import { useSubscriptionsStore } from '@/stores/subscriptions'
+import { useSchedulesStore } from '@/stores/schedules'
 import type { DeliveryInfo } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const subscriptionsStore = useSubscriptionsStore()
+const schedulesStore = useSchedulesStore()
 
-const activeTab = ref<'plan' | 'history'>('plan')
+const activeTab = ref<'plan' | 'history' | 'schedule'>('plan')
 const generatingPlan = ref(false)
 const confirmingDelivery = ref(false)
+const showScheduleModal = ref(false)
 
 const subscriptionId = computed(() => Number(route.params.id))
 
@@ -367,6 +374,18 @@ onMounted(() => {
             <History :size="18" />
             配送历史
           </button>
+          <button
+            @click="activeTab = 'schedule'"
+            :class="[
+              'flex items-center gap-2 px-6 py-3 font-medium text-sm border-b-2 -mb-px transition-colors',
+              activeTab === 'schedule'
+                ? 'border-violet-500 text-violet-600'
+                : 'border-transparent text-stone-500 hover:text-stone-700'
+            ]"
+          >
+            <Calendar :size="18" />
+            使用计划
+          </button>
         </div>
 
         <div v-if="activeTab === 'plan'">
@@ -497,7 +516,43 @@ onMounted(() => {
             </div>
           </div>
         </div>
+
+        <div v-else-if="activeTab === 'schedule'">
+          <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h3 class="text-lg font-semibold text-stone-800">订阅使用计划</h3>
+                <p class="text-sm text-stone-500 mt-1">为订阅礼盒创建定期使用提醒</p>
+              </div>
+              <button
+                @click="showScheduleModal = true"
+                class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl transition-colors"
+              >
+                <Plus :size="16" />
+                <span>新建计划</span>
+              </button>
+            </div>
+
+            <ScheduleCalendar
+              :subscription-id="subscriptionId"
+              source-type="subscription"
+            />
+          </div>
+        </div>
       </div>
     </div>
+
+    <ScheduleCreateModal
+      v-model:visible="showScheduleModal"
+      :prefill-data="{
+        title: subscription ? `订阅「${subscription.plan_name}」使用提醒` : '',
+        sourceType: 'subscription',
+        subscriptionId: subscriptionId,
+        frequencyType: 'weekly',
+        frequencyDays: [1, 3, 5],
+        reminderTime: '20:00',
+      }"
+      @success="schedulesStore.fetchNext30Days({ subscriptionId, sourceType: 'subscription' })"
+    />
   </div>
 </template>
