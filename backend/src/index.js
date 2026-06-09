@@ -10,6 +10,7 @@ import ingredientsRouter from './routes/ingredients.js';
 import recordsRouter from './routes/records.js';
 import analysisRouter from './routes/analysis.js';
 import statisticsRouter from './routes/statistics.js';
+import subscriptionsRouter from './routes/subscriptions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,6 +44,7 @@ app.use('/api/ingredients', ingredientsRouter);
 app.use('/api/records', recordsRouter);
 app.use('/api/analysis', analysisRouter);
 app.use('/api/statistics', statisticsRouter);
+app.use('/api/subscriptions', subscriptionsRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });

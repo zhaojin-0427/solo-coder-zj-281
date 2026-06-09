@@ -18,6 +18,14 @@ import type {
   FormulaReviewSummary,
   FormulaRiskWarning,
   FormulaRankItem,
+  Candle,
+  SubscriptionPlan,
+  SubscriptionPlanCreateInput,
+  SubscriptionPlanUpdateInput,
+  SubscriptionWithDeliveries,
+  DeliveryPlan,
+  DeliveryInfo,
+  SubscriptionStatus,
 } from '../types';
 
 export const ingredients = {
@@ -115,10 +123,65 @@ export const statistics = {
   },
 };
 
+export const candles = {
+  getList: () => {
+    return get<Candle[]>('/api/subscriptions/candles');
+  },
+
+  getDetail: (id: number) => {
+    return get<Candle>(`/api/subscriptions/candles/${id}`);
+  },
+};
+
+export const subscriptions = {
+  getList: (status?: SubscriptionStatus) => {
+    const params = status ? { status } : undefined;
+    return get<SubscriptionPlan[]>('/api/subscriptions', { params });
+  },
+
+  getDetail: (id: number) => {
+    return get<SubscriptionWithDeliveries>(`/api/subscriptions/${id}`);
+  },
+
+  create: (data: SubscriptionPlanCreateInput) => {
+    return post<SubscriptionPlan>('/api/subscriptions', data);
+  },
+
+  update: (id: number, data: SubscriptionPlanUpdateInput) => {
+    return put<SubscriptionPlan>(`/api/subscriptions/${id}`, data);
+  },
+
+  pause: (id: number) => {
+    return put<SubscriptionPlan>(`/api/subscriptions/${id}/pause`);
+  },
+
+  resume: (id: number) => {
+    return put<SubscriptionPlan>(`/api/subscriptions/${id}/resume`);
+  },
+
+  cancel: (id: number) => {
+    return put<SubscriptionPlan>(`/api/subscriptions/${id}/cancel`);
+  },
+
+  generatePlan: (id: number) => {
+    return get<DeliveryPlan>(`/api/subscriptions/${id}/generate-plan`);
+  },
+
+  confirmDelivery: (id: number) => {
+    return post<DeliveryInfo>(`/api/subscriptions/${id}/confirm-delivery`);
+  },
+
+  getHistory: (id: number) => {
+    return get<DeliveryInfo[]>(`/api/subscriptions/${id}/history`);
+  },
+};
+
 export default {
   ingredients,
   formulas,
   records,
   analysis,
   statistics,
+  candles,
+  subscriptions,
 };

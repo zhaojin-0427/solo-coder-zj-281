@@ -103,6 +103,88 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_formula_ingredients_ingredient ON formula_ingredients(ingredient_id);
   CREATE INDEX IF NOT EXISTS idx_usage_records_date ON usage_records(date);
   CREATE INDEX IF NOT EXISTS idx_usage_records_formula ON usage_records(formula_id);
+
+  CREATE TABLE IF NOT EXISTS candles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    english_name TEXT NOT NULL,
+    description TEXT,
+    scent_notes TEXT NOT NULL DEFAULT '[]',
+    aroma_family TEXT NOT NULL,
+    burn_time_hours INTEGER NOT NULL,
+    weight_grams INTEGER NOT NULL,
+    price REAL NOT NULL,
+    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    safety_level INTEGER NOT NULL DEFAULT 1 CHECK(safety_level BETWEEN 1 AND 5),
+    origin TEXT,
+    image_url TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS subscription_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_name TEXT NOT NULL,
+    recipient_name TEXT NOT NULL,
+    recipient_phone TEXT,
+    recipient_address TEXT NOT NULL,
+    delivery_cycle TEXT NOT NULL CHECK(delivery_cycle IN ('weekly', 'biweekly', 'monthly')),
+    budget_limit REAL NOT NULL,
+    candles_per_delivery INTEGER NOT NULL DEFAULT 2,
+    delivery_scene TEXT NOT NULL,
+    preferred_aromas TEXT NOT NULL DEFAULT '[]',
+    excluded_scents TEXT NOT NULL DEFAULT '[]',
+    special_dates TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'paused', 'cancelled', 'completed')),
+    user_notes TEXT,
+    start_date TEXT NOT NULL,
+    next_delivery_date TEXT,
+    total_deliveries INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS subscription_deliveries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subscription_id INTEGER NOT NULL,
+    delivery_number INTEGER NOT NULL,
+    scheduled_date TEXT NOT NULL,
+    actual_delivery_date TEXT,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'generated', 'shipped', 'delivered', 'cancelled')),
+    total_price REAL NOT NULL DEFAULT 0,
+    candle_count INTEGER NOT NULL DEFAULT 0,
+    estimated_burn_days INTEGER NOT NULL DEFAULT 0,
+    conflict_warnings TEXT NOT NULL DEFAULT '[]',
+    out_of_stock_notes TEXT,
+    delivery_notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subscription_id) REFERENCES subscription_plans(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS delivery_contents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    delivery_id INTEGER NOT NULL,
+    candle_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_price REAL NOT NULL,
+    is_replacement INTEGER NOT NULL DEFAULT 0,
+    original_candle_id INTEGER,
+    replacement_reason TEXT,
+    match_score REAL NOT NULL DEFAULT 0,
+    FOREIGN KEY (delivery_id) REFERENCES subscription_deliveries(id) ON DELETE CASCADE,
+    FOREIGN KEY (candle_id) REFERENCES candles(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_candles_aroma_family ON candles(aroma_family);
+  CREATE INDEX IF NOT EXISTS idx_candles_active ON candles(is_active);
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscription_plans(status);
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_next_delivery ON subscription_plans(next_delivery_date);
+  CREATE INDEX IF NOT EXISTS idx_deliveries_subscription ON subscription_deliveries(subscription_id);
+  CREATE INDEX IF NOT EXISTS idx_deliveries_status ON subscription_deliveries(status);
+  CREATE INDEX IF NOT EXISTS idx_deliveries_scheduled ON subscription_deliveries(scheduled_date);
+  CREATE INDEX IF NOT EXISTS idx_delivery_contents_delivery ON delivery_contents(delivery_id);
+  CREATE INDEX IF NOT EXISTS idx_delivery_contents_candle ON delivery_contents(candle_id);
 `);
 
 console.log('数据表创建成功');
@@ -647,9 +729,191 @@ usageRecords.forEach((record, index) => {
   console.log(`已创建使用记录 ${index + 1}`);
 });
 
+const insertCandle = db.prepare(`
+  INSERT INTO candles (
+    name, english_name, description, scent_notes, aroma_family,
+    burn_time_hours, weight_grams, price, stock_quantity,
+    safety_level, origin, image_url, is_active
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const candles = [
+  {
+    name: '薰衣草梦境',
+    english_name: 'Lavender Dream',
+    description: '宁静舒缓的薰衣草香气，帮助放松身心，促进深度睡眠。',
+    scent_notes: ['薰衣草', '洋甘菊', '香草'],
+    aroma_family: 'floral',
+    burn_time_hours: 60,
+    weight_grams: 200,
+    price: 128.00,
+    stock_quantity: 50,
+    safety_level: 1,
+    origin: '法国普罗旺斯',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '玫瑰花园',
+    english_name: 'Rose Garden',
+    description: '浓郁优雅的大马士革玫瑰香调，带来浪漫温馨的氛围。',
+    scent_notes: ['玫瑰', '天竺葵', '乳香'],
+    aroma_family: 'floral',
+    burn_time_hours: 55,
+    weight_grams: 180,
+    price: 168.00,
+    stock_quantity: 35,
+    safety_level: 1,
+    origin: '保加利亚',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '柑橘晨光',
+    english_name: 'Citrus Morning',
+    description: '清新明快的柑橘果香，提神醒脑，开启活力满满的一天。',
+    scent_notes: ['柠檬', '甜橙', '佛手柑'],
+    aroma_family: 'citrus',
+    burn_time_hours: 50,
+    weight_grams: 180,
+    price: 98.00,
+    stock_quantity: 45,
+    safety_level: 1,
+    origin: '意大利西西里',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '森林秘境',
+    english_name: 'Forest Sanctuary',
+    description: '深邃的木质调香气，仿佛置身于原始森林之中。',
+    scent_notes: ['雪松', '檀香', '乳香'],
+    aroma_family: 'woody',
+    burn_time_hours: 65,
+    weight_grams: 220,
+    price: 158.00,
+    stock_quantity: 30,
+    safety_level: 1,
+    origin: '印度',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '薄荷清风',
+    english_name: 'Mint Breeze',
+    description: '清凉爽快的薄荷香气，消暑解热，净化空气。',
+    scent_notes: ['薄荷', '尤加利', '茶树'],
+    aroma_family: 'herbal',
+    burn_time_hours: 45,
+    weight_grams: 160,
+    price: 88.00,
+    stock_quantity: 40,
+    safety_level: 2,
+    origin: '美国',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '海洋之心',
+    english_name: 'Ocean Heart',
+    description: '清新海洋调，带来海风拂面的清爽感觉。',
+    scent_notes: ['海盐', '海藻', '白麝香'],
+    aroma_family: 'fresh',
+    burn_time_hours: 55,
+    weight_grams: 190,
+    price: 118.00,
+    stock_quantity: 25,
+    safety_level: 1,
+    origin: '法国',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '香草布丁',
+    english_name: 'Vanilla Pudding',
+    description: '甜蜜温暖的香草香氛，营造温馨舒适的居家氛围。',
+    scent_notes: ['香草', '焦糖', '肉桂'],
+    aroma_family: 'gourmand',
+    burn_time_hours: 50,
+    weight_grams: 180,
+    price: 108.00,
+    stock_quantity: 38,
+    safety_level: 1,
+    origin: '马达加斯加',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '东方神韵',
+    english_name: 'Oriental Charm',
+    description: '神秘东方调，融合檀香、麝香与香料的馥郁香气。',
+    scent_notes: ['檀香', '麝香', '肉豆蔻'],
+    aroma_family: 'oriental',
+    burn_time_hours: 70,
+    weight_grams: 230,
+    price: 198.00,
+    stock_quantity: 20,
+    safety_level: 2,
+    origin: '中东',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '茉莉花香',
+    english_name: 'Jasmine Bloom',
+    description: '清雅高贵的茉莉花香，舒缓情绪，提升魅力。',
+    scent_notes: ['茉莉', '橙花', '依兰依兰'],
+    aroma_family: 'floral',
+    burn_time_hours: 55,
+    weight_grams: 180,
+    price: 148.00,
+    stock_quantity: 0,
+    safety_level: 1,
+    origin: '埃及',
+    image_url: null,
+    is_active: 1
+  },
+  {
+    name: '秋日暖阳',
+    english_name: 'Autumn Glow',
+    description: '温暖的肉桂与苹果香调，感受秋日丰收的喜悦。',
+    scent_notes: ['肉桂', '苹果', '丁香'],
+    aroma_family: 'spicy',
+    burn_time_hours: 60,
+    weight_grams: 200,
+    price: 138.00,
+    stock_quantity: 28,
+    safety_level: 1,
+    origin: '中国',
+    image_url: null,
+    is_active: 1
+  }
+];
+
+console.log('正在插入香薰蜡烛数据...');
+candles.forEach((candle, index) => {
+  insertCandle.run(
+    candle.name,
+    candle.english_name,
+    candle.description,
+    JSON.stringify(candle.scent_notes),
+    candle.aroma_family,
+    candle.burn_time_hours,
+    candle.weight_grams,
+    candle.price,
+    candle.stock_quantity,
+    candle.safety_level,
+    candle.origin,
+    candle.image_url,
+    candle.is_active
+  );
+  console.log(`已创建蜡烛 ${index + 1}: ${candle.name}`);
+});
+
 const ingredientCount = db.prepare('SELECT COUNT(*) as count FROM ingredients').get().count;
 const formulaCount = db.prepare('SELECT COUNT(*) as count FROM formulas').get().count;
 const usageCount = db.prepare('SELECT COUNT(*) as count FROM usage_records').get().count;
+const candleCount = db.prepare('SELECT COUNT(*) as count FROM candles').get().count;
 
 console.log('\n========================================');
 console.log('数据库初始化完成！');
@@ -657,6 +921,7 @@ console.log('========================================');
 console.log(`成分数据: ${ingredientCount} 条（${baseOils.length} 种基础油 + ${essentialOils.length} 种单方精油）`);
 console.log(`配方数据: ${formulaCount} 条`);
 console.log(`使用记录: ${usageCount} 条`);
+console.log(`蜡烛产品: ${candleCount} 条`);
 console.log('========================================');
 
 db.close();

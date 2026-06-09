@@ -6,6 +6,8 @@ import IngredientDetail from '@/pages/IngredientDetail.vue'
 import RecordList from '@/pages/RecordList.vue'
 import Analysis from '@/pages/Analysis.vue'
 import Statistics from '@/pages/Statistics.vue'
+import SubscriptionList from '@/pages/SubscriptionList.vue'
+import SubscriptionDetail from '@/pages/SubscriptionDetail.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -36,6 +38,16 @@ const routes: RouteRecordRaw[] = [
     path: '/records',
     name: 'records',
     component: RecordList
+  },
+  {
+    path: '/subscriptions',
+    name: 'subscriptions',
+    component: SubscriptionList
+  },
+  {
+    path: '/subscriptions/:id',
+    name: 'subscription-detail',
+    component: SubscriptionDetail
   },
   {
     path: '/analysis',
