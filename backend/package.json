@@ -1,0 +1,23 @@
+{
+  "name": "aroma-tracker-backend",
+  "version": "1.0.0",
+  "description": "精油芳疗配方管理与皮肤适配追踪系统 - 后端",
+  "main": "src/index.js",
+  "type": "module",
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.6",
+    "express": "^4.22.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "init-db": "node scripts/init-db.js"
+  },
+  "keywords": ["aromatherapy", "essential-oils", "skin-care", "express"],
+  "author": "",
+  "license": "ISC"
+}
