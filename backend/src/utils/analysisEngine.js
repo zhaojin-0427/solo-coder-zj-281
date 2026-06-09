@@ -271,12 +271,12 @@ function checkFormulaRisks(baseOils = [], essentialOils = []) {
       }
     });
 
-    if (data.safety_level <= 2) {
+    if (data.safety_level >= 4) {
       warnings.push({
-        level: 'warning',
+        level: data.safety_level === 5 ? 'danger' : 'warning',
         type: 'contraindication',
-        message: `${data.name} 安全等级较低`,
-        details: '该成分安全等级为 ' + data.safety_level + '，使用时需特别注意',
+        message: `${data.name} 安全等级${data.safety_level === 5 ? '极高风险' : '较低'}`,
+        details: '该成分安全等级为 ' + data.safety_level + '（1最安全，5最危险），使用时需特别注意',
         relatedIngredients: [{ id: data.id, name: data.name }]
       });
     }
@@ -351,7 +351,9 @@ function getFormulaReviewRank() {
 
   const reviews = formulas.map(f => getFormulaReview(f.id)).filter(Boolean);
 
-  const sortedByFitness = [...reviews].sort((a, b) => b.fitnessScore - a.fitnessScore);
+  const sortedByFitness = [...reviews]
+    .filter(r => r.riskLevel === 'low' && r.recommendation === 'continue')
+    .sort((a, b) => b.fitnessScore - a.fitnessScore);
   const best = sortedByFitness.slice(0, 5).map(r => ({
     id: r.formulaId,
     name: r.formulaName,
@@ -369,7 +371,10 @@ function getFormulaReviewRank() {
     .filter(r => r.riskLevel !== 'low' || r.recommendation !== 'continue')
     .sort((a, b) => {
       const riskOrder = { high: 0, medium: 1, low: 2 };
-      return riskOrder[a.riskLevel] - riskOrder[b.riskLevel] || a.fitnessScore - b.fitnessScore;
+      const riskCompare = riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
+      if (riskCompare !== 0) return riskCompare;
+      const recommendOrder = { suspend: 0, replace_ingredient: 1, reduce_drops: 2, continue: 3 };
+      return recommendOrder[a.recommendation] - recommendOrder[b.recommendation];
     });
   const risky = sortedByRisk.slice(0, 5).map(r => ({
     id: r.formulaId,

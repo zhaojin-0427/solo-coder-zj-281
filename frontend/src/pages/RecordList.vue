@@ -104,9 +104,23 @@ const handleCreateSuccess = () => {
   recordsStore.fetchList()
 }
 
-onMounted(() => {
-  recordsStore.fetchList()
-  formulasStore.fetchList()
+const initDefaultSelection = () => {
+  if (formulasStore.list.length > 0 && !selectedFormulaId.value) {
+    const formulasWithRecords = formulasStore.list.filter(f =>
+      recordsStore.list.some(r => r.formula_id === f.id)
+    )
+    if (formulasWithRecords.length > 0) {
+      selectFormula(formulasWithRecords[0].id)
+    }
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([
+    recordsStore.fetchList(),
+    formulasStore.fetchList()
+  ])
+  initDefaultSelection()
 })
 </script>
 
@@ -167,6 +181,20 @@ onMounted(() => {
             <span>{{ formula.name }}</span>
             <span v-if="selectedFormulaId === formula.id" class="text-emerald-600">✓</span>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="!selectedFormulaId && !recordsStore.loading && formulasStore.list.length > 0" class="mb-6 bg-gradient-to-r from-sky-50 to-indigo-50 rounded-2xl p-5 border border-sky-100">
+      <div class="flex items-start gap-4">
+        <div class="p-3 bg-white rounded-xl shadow-sm">
+          <Zap :size="24" class="text-sky-600" />
+        </div>
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold text-sky-900 mb-1">💡 查看配方历史表现</h3>
+          <p class="text-sm text-sky-700 leading-relaxed">
+            点击上方「全部配方」筛选按钮，选择一个具体配方即可查看该配方的历史使用表现汇总、皮肤反应分析和个性化调配建议。
+          </p>
         </div>
       </div>
     </div>
