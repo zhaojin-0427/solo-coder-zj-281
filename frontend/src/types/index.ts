@@ -246,3 +246,53 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
 }
+
+export type RecommendationType = 'continue' | 'reduce_drops' | 'replace_ingredient' | 'suspend';
+
+export interface FormulaReviewSummary {
+  formulaId: number;
+  formulaName: string;
+  useCount: number;
+  avgAbsorption: number;
+  avgSensitivity: number;
+  avgImprovement: number;
+  lastFeedback: string | null;
+  lastFeedbackDate: string | null;
+  lastRating: number | null;
+  reactionKeywords: string[];
+  adaptationConclusion: string;
+  recommendation: RecommendationType;
+  recommendationReason: string;
+  fitnessScore: number;
+  riskLevel: 'low' | 'medium' | 'high';
+  sensitiveIngredients: Array<{
+    id: number;
+    name: string;
+    sensitivityCount: number;
+    avgSensitivity: number;
+  }>;
+}
+
+export interface FormulaRiskWarning {
+  level: 'info' | 'warning' | 'danger';
+  type: 'contraindication' | 'sensitivity_history' | 'drops_ratio';
+  message: string;
+  details?: string;
+  relatedIngredients?: Array<{
+    id: number;
+    name: string;
+  }>;
+}
+
+export interface FormulaRankItem {
+  id: number;
+  name: string;
+  useCount: number;
+  avgAbsorption: number;
+  avgSensitivity: number;
+  avgImprovement: number;
+  fitnessScore: number;
+  riskLevel: 'low' | 'medium' | 'high';
+  recommendation: RecommendationType;
+  lastUsedDate: string | null;
+}

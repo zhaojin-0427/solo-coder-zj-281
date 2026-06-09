@@ -1,5 +1,6 @@
 import express from 'express';
 import { query } from '../db/index.js';
+import { getFormulaReviewRank } from '../utils/analysisEngine.js';
 
 const router = express.Router();
 
@@ -198,6 +199,15 @@ router.get('/trend', (req, res) => {
         overallTopOils
       }
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/formula-review-rank', (req, res) => {
+  try {
+    const rankData = getFormulaReviewRank();
+    res.json({ success: true, data: rankData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

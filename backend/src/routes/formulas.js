@@ -1,6 +1,6 @@
 import express from 'express';
 import { query, queryOne, insert, update, remove, transaction } from '../db/index.js';
-import analyzeFormula from '../utils/analysisEngine.js';
+import { analyzeFormula, getFormulaReview, checkFormulaRisks } from '../utils/analysisEngine.js';
 
 const router = express.Router();
 
@@ -64,6 +64,48 @@ router.get('/', (req, res) => {
     });
 
     res.json({ success: true, data: formulasWithIngredients });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/analyze', (req, res) => {
+  try {
+    const { baseOils = [], essentialOils = [] } = req.body;
+
+    const analysis = analyzeFormula(
+      baseOils.map(o => ({ ingredientId: o.ingredientId, drops: o.drops })),
+      essentialOils.map(o => ({ ingredientId: o.ingredientId, drops: o.drops }))
+    );
+
+    res.json({ success: true, data: analysis });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/check-risks', (req, res) => {
+  try {
+    const { baseOils = [], essentialOils = [] } = req.body;
+
+    const warnings = checkFormulaRisks(
+      baseOils.map(o => ({ ingredientId: o.ingredientId, drops: o.drops })),
+      essentialOils.map(o => ({ ingredientId: o.ingredientId, drops: o.drops }))
+    );
+
+    res.json({ success: true, data: warnings });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/:id/review', (req, res) => {
+  try {
+    const review = getFormulaReview(req.params.id);
+    if (!review) {
+      return res.status(404).json({ success: false, error: '配方不存在' });
+    }
+    res.json({ success: true, data: review });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -220,21 +262,6 @@ router.delete('/:id', (req, res) => {
 
     remove('formulas', 'id = ?', [req.params.id]);
     res.json({ success: true, data: { message: '删除成功' } });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-router.post('/analyze', (req, res) => {
-  try {
-    const { baseOils = [], essentialOils = [] } = req.body;
-
-    const analysis = analyzeFormula(
-      baseOils.map(o => ({ ingredientId: o.ingredientId, drops: o.drops })),
-      essentialOils.map(o => ({ ingredientId: o.ingredientId, drops: o.drops }))
-    );
-
-    res.json({ success: true, data: analysis });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

@@ -14,8 +14,9 @@ import {
   Loader2
 } from 'lucide-vue-next'
 import { formulas, ingredients } from '@/api'
-import type { Ingredient, FormulaIngredientInput, FormulaAnalysis } from '@/types'
+import type { Ingredient, FormulaIngredientInput, FormulaAnalysis, FormulaRiskWarning } from '@/types'
 import { cn } from '@/lib/utils'
+import RiskWarningList from '@/components/Common/RiskWarningList.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -30,7 +31,9 @@ const currentStep = ref(1)
 const totalSteps = 4
 const creating = ref(false)
 const analyzing = ref(false)
+const checkingRisks = ref(false)
 const loadingIngredients = ref(false)
+const riskWarnings = ref<FormulaRiskWarning[]>([])
 
 const name = ref('')
 const description = ref('')
@@ -139,9 +142,26 @@ const analyzeFormula = async () => {
   }
 }
 
+const checkRisks = async () => {
+  if (baseOils.value.length === 0 && essentialOils.value.length === 0) {
+    riskWarnings.value = []
+    return
+  }
+  
+  checkingRisks.value = true
+  try {
+    riskWarnings.value = await formulas.checkRisks(baseOils.value, essentialOils.value)
+  } catch (error) {
+    console.error('检查风险失败:', error)
+  } finally {
+    checkingRisks.value = false
+  }
+}
+
 watch([baseOils, essentialOils], () => {
   if (baseOils.value.length > 0 || essentialOils.value.length > 0) {
     analyzeFormula()
+    checkRisks()
   }
 }, { deep: true })
 
@@ -430,6 +450,15 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+
+            <div v-if="riskWarnings.length > 0" class="mt-4">
+              <div class="flex items-center gap-2 mb-3">
+                <AlertTriangle :size="16" class="text-amber-500" />
+                <span class="text-sm font-medium text-stone-700">风险提示</span>
+                <Loader2 v-if="checkingRisks" :size="16" class="animate-spin text-stone-400" />
+              </div>
+              <RiskWarningList :warnings="riskWarnings" />
+            </div>
           </div>
 
           <div v-else-if="currentStep === 3" class="space-y-4">
@@ -559,6 +588,15 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+
+            <div v-if="riskWarnings.length > 0" class="mt-4">
+              <div class="flex items-center gap-2 mb-3">
+                <AlertTriangle :size="16" class="text-amber-500" />
+                <span class="text-sm font-medium text-stone-700">风险提示</span>
+                <Loader2 v-if="checkingRisks" :size="16" class="animate-spin text-stone-400" />
+              </div>
+              <RiskWarningList :warnings="riskWarnings" />
+            </div>
           </div>
 
           <div v-else-if="currentStep === 4" class="space-y-6">
@@ -659,6 +697,15 @@ onMounted(() => {
                   <span class="text-amber-700">{{ analysis.contraindications.join('、') }}</span>
                 </div>
               </div>
+            </div>
+
+            <div v-if="riskWarnings.length > 0" class="mt-4">
+              <div class="flex items-center gap-2 mb-3">
+                <AlertTriangle :size="16" class="text-amber-500" />
+                <span class="text-sm font-medium text-stone-700">风险提示</span>
+                <Loader2 v-if="checkingRisks" :size="16" class="animate-spin text-stone-400" />
+              </div>
+              <RiskWarningList :warnings="riskWarnings" />
             </div>
           </div>
         </div>

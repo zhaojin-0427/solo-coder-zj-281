@@ -12,8 +12,7 @@
       @mouseleave="handleMouseLeave"
     >
       <svg
-        class="w-5 h-5 transition-colors duration-fast"
-        :class="getStarClass(star)"
+        :class="[getStarSizeClass, getStarClass(star), 'transition-colors duration-fast']"
         fill="currentColor"
         viewBox="0 0 20 20"
       >
@@ -36,13 +35,19 @@ interface Props {
   readonly?: boolean
   showValue?: boolean
   color?: 'primary' | 'warning' | 'secondary'
+  size?: 'sm' | 'md'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: 0,
   readonly: false,
   showValue: false,
-  color: 'warning'
+  color: 'warning',
+  size: 'md'
+})
+
+const getStarSizeClass = computed(() => {
+  return props.size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
 })
 
 const emit = defineEmits<{

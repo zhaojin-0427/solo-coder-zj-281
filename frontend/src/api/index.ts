@@ -15,6 +15,9 @@ import type {
   IngredientFitnessRank,
   SkinCurveData,
   OilTrendData,
+  FormulaReviewSummary,
+  FormulaRiskWarning,
+  FormulaRankItem,
 } from '../types';
 
 export const ingredients = {
@@ -51,6 +54,14 @@ export const formulas = {
 
   analyze: (baseOils: FormulaIngredientInput[] = [], essentialOils: FormulaIngredientInput[] = []) => {
     return post<FormulaAnalysis>('/api/formulas/analyze', { baseOils, essentialOils });
+  },
+
+  getReview: (id: number) => {
+    return get<FormulaReviewSummary>(`/api/formulas/${id}/review`);
+  },
+
+  checkRisks: (baseOils: FormulaIngredientInput[] = [], essentialOils: FormulaIngredientInput[] = []) => {
+    return post<FormulaRiskWarning[]>('/api/formulas/check-risks', { baseOils, essentialOils });
   },
 };
 
@@ -94,6 +105,13 @@ export const statistics = {
 
   getTrend: () => {
     return get<OilTrendData>('/api/statistics/trend');
+  },
+
+  getFormulaReviewRank: () => {
+    return get<{
+      best: FormulaRankItem[];
+      risky: FormulaRankItem[];
+    }>('/api/statistics/formula-review-rank');
   },
 };
 

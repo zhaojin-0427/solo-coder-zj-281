@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Plus, Calendar, Droplets, Zap, Heart, FileText, User, Filter, ChevronDown } from 'lucide-vue-next'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Plus, Calendar, Droplets, Zap, Heart, FileText, User, Filter, ChevronDown, Smile } from 'lucide-vue-next'
 import StarRating from '@/components/Common/StarRating.vue'
 import TagBadge from '@/components/Common/TagBadge.vue'
 import LoadingSpinner from '@/components/Common/LoadingSpinner.vue'
 import EmptyState from '@/components/Common/EmptyState.vue'
 import RecordCreateModal from '@/components/Record/RecordCreateModal.vue'
+import FormulaReviewCard from '@/components/Common/FormulaReviewCard.vue'
 import { useRecordsStore } from '@/stores/records'
 import { useFormulasStore } from '@/stores/formulas'
+import { formulas } from '@/api'
+import type { FormulaReviewSummary } from '@/types'
 import { cn } from '@/lib/utils'
 
 const recordsStore = useRecordsStore()
@@ -16,6 +19,8 @@ const formulasStore = useFormulasStore()
 const showCreateModal = ref(false)
 const selectedFormulaId = ref<number | null>(null)
 const showFilterDropdown = ref(false)
+const formulaReview = ref<FormulaReviewSummary | null>(null)
+const reviewLoading = ref(false)
 
 const skinConditionColors: Record<string, string> = {
   '正常': 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -59,6 +64,25 @@ const selectFormula = (formulaId: number | null) => {
   selectedFormulaId.value = formulaId
   showFilterDropdown.value = false
 }
+
+const fetchFormulaReview = async (formulaId: number) => {
+  reviewLoading.value = true
+  try {
+    formulaReview.value = await formulas.getReview(formulaId)
+  } catch (error) {
+    console.error('获取配方复盘失败:', error)
+  } finally {
+    reviewLoading.value = false
+  }
+}
+
+watch(selectedFormulaId, (newId) => {
+  if (newId) {
+    fetchFormulaReview(newId)
+  } else {
+    formulaReview.value = null
+  }
+})
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr)
@@ -146,6 +170,13 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <FormulaReviewCard
+      v-if="selectedFormulaId && !recordsStore.loading"
+      :review="formulaReview"
+      :loading="reviewLoading"
+      class="mb-6"
+    />
 
     <div v-if="recordsStore.loading" class="flex justify-center py-16">
       <LoadingSpinner size="lg" />
@@ -245,7 +276,7 @@ onMounted(() => {
                   </div>
 
                   <div v-if="record.skin_condition" class="mt-4 flex items-center gap-2">
-                    <Skin :size="16" class="text-stone-400" />
+                    <Smile :size="16" class="text-stone-400" />
                     <span class="text-sm text-stone-600">皮肤状况：</span>
                     <span
                       :class="[

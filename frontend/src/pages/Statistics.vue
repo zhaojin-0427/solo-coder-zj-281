@@ -112,6 +112,131 @@
         <div v-if="oilTrendData && oilTrendData.weeklyData.length > 0" ref="oilTrendChartRef" class="w-full h-80" />
         <EmptyState v-else title="暂无精油趋势数据" description="添加使用记录后即可查看精油使用趋势" />
       </div>
+
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-text">最佳适配配方</h2>
+            <p class="text-sm text-text-muted">综合适配分最高的配方 TOP 5</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+            <Trophy :size="20" class="text-emerald-600" />
+          </div>
+        </div>
+        <div v-if="reviewRankLoading" class="flex justify-center py-12">
+          <LoadingSpinner size="md" />
+        </div>
+        <div v-else-if="bestFormulas.length === 0" class="py-8">
+          <EmptyState title="暂无排行数据" description="添加使用记录后即可查看配方排行" />
+        </div>
+        <div v-else class="space-y-3">
+          <div
+            v-for="(item, index) in bestFormulas"
+            :key="item.id"
+            class="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-xl hover:bg-emerald-50 transition-colors"
+          >
+            <div
+              :class="[
+                'w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0',
+                index === 0 ? 'bg-yellow-400 text-white' :
+                index === 1 ? 'bg-stone-400 text-white' :
+                index === 2 ? 'bg-amber-600 text-white' :
+                'bg-stone-200 text-stone-600'
+              ]"
+            >
+              {{ index + 1 }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-stone-800 truncate">{{ item.name }}</div>
+              <div class="flex items-center gap-3 mt-1 text-xs text-stone-500">
+                <span class="flex items-center gap-1">
+                  <Droplets :size="12" class="text-emerald-500" />
+                  {{ item.avgAbsorption }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <Zap :size="12" class="text-rose-500" />
+                  {{ item.avgSensitivity }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <Heart :size="12" class="text-amber-500" />
+                  {{ item.avgImprovement }}
+                </span>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-lg font-bold text-emerald-600">{{ item.fitnessScore }}</div>
+              <div class="text-xs text-stone-400">{{ item.useCount }} 次使用</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-text">需关注配方</h2>
+            <p class="text-sm text-text-muted">风险较高或建议调整的配方</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+            <AlertTriangle :size="20" class="text-amber-600" />
+          </div>
+        </div>
+        <div v-if="reviewRankLoading" class="flex justify-center py-12">
+          <LoadingSpinner size="md" />
+        </div>
+        <div v-else-if="riskyFormulas.length === 0" class="py-8">
+          <div class="text-center">
+            <CheckCircle :size="48" class="mx-auto text-emerald-300 mb-4" />
+            <p class="text-stone-500">暂无高风险配方</p>
+            <p class="text-sm text-stone-400 mt-1">所有配方适配良好</p>
+          </div>
+        </div>
+        <div v-else class="space-y-3">
+          <div
+            v-for="item in riskyFormulas"
+            :key="item.id"
+            class="flex items-center gap-3 p-3 bg-amber-50/50 rounded-xl hover:bg-amber-50 transition-colors"
+          >
+            <div
+              :class="[
+                'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                item.riskLevel === 'high' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+              ]"
+            >
+              <component :is="getRecommendationIcon(item.recommendation)" :size="16" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-stone-800 truncate">{{ item.name }}</div>
+              <div class="flex items-center gap-2 mt-1">
+                <span
+                  :class="[
+                    'px-2 py-0.5 text-xs font-medium rounded-full',
+                    getRiskLevelColor(item.riskLevel)
+                  ]"
+                >
+                  {{ getRiskLevelLabel(item.riskLevel) }}
+                </span>
+                <span class="text-xs text-stone-500">
+                  {{ getRecommendationLabel(item.recommendation) }}
+                </span>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div
+                :class="[
+                  'text-lg font-bold',
+                  item.riskLevel === 'high' ? 'text-red-600' : 'text-amber-600'
+                ]"
+              >
+                {{ item.fitnessScore }}
+              </div>
+              <div class="flex items-center gap-1 justify-end text-xs text-stone-400">
+                <StarRating :model-value="item.avgImprovement" readonly size="sm" color="primary" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -122,7 +247,23 @@ import * as echarts from 'echarts'
 import { useStatisticsStore } from '@/stores/statistics'
 import LoadingSpinner from '@/components/Common/LoadingSpinner.vue'
 import EmptyState from '@/components/Common/EmptyState.vue'
+import StarRating from '@/components/Common/StarRating.vue'
+import { statistics } from '@/api'
 import type { ECharts } from 'echarts'
+import type { FormulaRankItem } from '@/types'
+import {
+  Trophy,
+  AlertTriangle,
+  Droplets,
+  Zap,
+  Heart,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle,
+  PauseCircle,
+  Edit3,
+  Minus
+} from 'lucide-vue-next'
 
 const store = useStatisticsStore()
 
@@ -150,6 +291,23 @@ const fitnessRankData = computed(() => store.fitnessRankData)
 const skinCurveData = computed(() => store.skinCurveData)
 const oilTrendData = computed(() => store.oilTrendData)
 
+const reviewRankLoading = ref(false)
+const bestFormulas = ref<FormulaRankItem[]>([])
+const riskyFormulas = ref<FormulaRankItem[]>([])
+
+const fetchReviewRank = async () => {
+  reviewRankLoading.value = true
+  try {
+    const data = await statistics.getFormulaReviewRank()
+    bestFormulas.value = data.best
+    riskyFormulas.value = data.risky
+  } catch (error) {
+    console.error('获取配方复盘排行失败:', error)
+  } finally {
+    reviewRankLoading.value = false
+  }
+}
+
 const handleTimeRangeChange = async (range: '7d' | '30d' | '90d') => {
   selectedTimeRange.value = range
   await store.setTimeRange(range)
@@ -170,6 +328,44 @@ const getRepurchaseRatePercent = (rate: '高' | '中' | '低') => {
     case '高': return 80
     case '中': return 50
     case '低': return 20
+  }
+}
+
+const getRecommendationIcon = (type: string) => {
+  switch (type) {
+    case 'continue': return CheckCircle
+    case 'suspend': return PauseCircle
+    case 'replace_ingredient': return Edit3
+    case 'reduce_drops': return Minus
+    default: return CheckCircle
+  }
+}
+
+const getRecommendationLabel = (type: string) => {
+  switch (type) {
+    case 'continue': return '继续使用'
+    case 'suspend': return '暂停使用'
+    case 'replace_ingredient': return '更换成分'
+    case 'reduce_drops': return '降低滴数'
+    default: return '继续使用'
+  }
+}
+
+const getRiskLevelColor = (level: string) => {
+  switch (level) {
+    case 'high': return 'bg-red-100 text-red-600'
+    case 'medium': return 'bg-amber-100 text-amber-600'
+    case 'low': return 'bg-emerald-100 text-emerald-600'
+    default: return 'bg-stone-100 text-stone-600'
+  }
+}
+
+const getRiskLevelLabel = (level: string) => {
+  switch (level) {
+    case 'high': return '高风险'
+    case 'medium': return '中风险'
+    case 'low': return '低风险'
+    default: return '低风险'
   }
 }
 
@@ -643,7 +839,10 @@ const handleResize = () => {
 }
 
 onMounted(async () => {
-  await store.fetchAll(selectedTimeRange.value)
+  await Promise.all([
+    store.fetchAll(selectedTimeRange.value),
+    fetchReviewRank()
+  ])
   await nextTick()
   initCharts()
   window.addEventListener('resize', handleResize)

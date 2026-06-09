@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -19,8 +19,10 @@ import {
   Loader2
 } from 'lucide-vue-next'
 import { formulas, ingredients, records } from '@/api'
-import type { Formula, FormulaIngredient, FormulaIngredientInput, Ingredient } from '@/types'
+import type { Formula, FormulaIngredient, FormulaIngredientInput, Ingredient, FormulaReviewSummary, FormulaRiskWarning } from '@/types'
 import { cn } from '@/lib/utils'
+import FormulaReviewCard from '@/components/Common/FormulaReviewCard.vue'
+import RiskWarningList from '@/components/Common/RiskWarningList.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,10 +31,14 @@ const formulaId = computed(() => Number(route.params.id))
 const loading = ref(false)
 const saving = ref(false)
 const analyzing = ref(false)
+const checkingRisks = ref(false)
 const formula = ref<Formula | null>(null)
 const isEditMode = ref(false)
 const showDeleteConfirm = ref(false)
 const showRecordModal = ref(false)
+const formulaReview = ref<FormulaReviewSummary | null>(null)
+const reviewLoading = ref(false)
+const riskWarnings = ref<FormulaRiskWarning[]>([])
 
 const editName = ref('')
 const editDescription = ref<string | null>('')
@@ -83,6 +89,7 @@ const fetchFormula = async () => {
   loading.value = true
   try {
     formula.value = await formulas.getDetail(formulaId.value)
+    fetchFormulaReview()
   } catch (error) {
     console.error('获取配方详情失败:', error)
   } finally {
@@ -111,7 +118,14 @@ const enterEditMode = () => {
   
   isEditMode.value = true
   loadIngredients()
+  checkRisks()
 }
+
+watch([editBaseOils, editEssentialOils], () => {
+  if (isEditMode.value) {
+    checkRisks()
+  }
+}, { deep: true })
 
 const cancelEdit = () => {
   isEditMode.value = false
@@ -130,6 +144,33 @@ const analyzeFormula = async () => {
     console.error('分析配方失败:', error)
   } finally {
     analyzing.value = false
+  }
+}
+
+const fetchFormulaReview = async () => {
+  reviewLoading.value = true
+  try {
+    formulaReview.value = await formulas.getReview(formulaId.value)
+  } catch (error) {
+    console.error('获取配方复盘失败:', error)
+  } finally {
+    reviewLoading.value = false
+  }
+}
+
+const checkRisks = async () => {
+  if (editBaseOils.value.length === 0 && editEssentialOils.value.length === 0) {
+    riskWarnings.value = []
+    return
+  }
+  
+  checkingRisks.value = true
+  try {
+    riskWarnings.value = await formulas.checkRisks(editBaseOils.value, editEssentialOils.value)
+  } catch (error) {
+    console.error('检查风险失败:', error)
+  } finally {
+    checkingRisks.value = false
   }
 }
 
@@ -576,7 +617,22 @@ onMounted(() => {
               class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none"
             ></textarea>
           </div>
+
+          <div v-if="isEditMode && riskWarnings.length > 0" class="mt-6 pt-4 border-t border-stone-100">
+            <div class="flex items-center gap-2 mb-3">
+              <AlertTriangle :size="16" class="text-amber-500" />
+              <h4 class="text-sm font-medium text-stone-700">风险提示</h4>
+              <Loader2 v-if="checkingRisks" :size="16" class="animate-spin text-stone-400" />
+            </div>
+            <RiskWarningList :warnings="riskWarnings" />
+          </div>
         </div>
+
+        <FormulaReviewCard
+          v-if="!isEditMode && formula"
+          :review="formulaReview"
+          :loading="reviewLoading"
+        />
 
         <div v-if="!isEditMode" class="flex gap-3">
           <button
