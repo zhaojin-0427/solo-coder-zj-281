@@ -12,12 +12,31 @@ const AROMA_FAMILY_CONFLICTS = {
   oriental: ['herbal', 'citrus']
 };
 
+function toCamelCase(str) {
+  return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+}
+
+function addCamelCaseFields(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const result = { ...obj };
+  for (const key of Object.keys(obj)) {
+    const camelKey = toCamelCase(key);
+    if (camelKey !== key && !(camelKey in result)) {
+      result[camelKey] = obj[key];
+    }
+  }
+  return result;
+}
+
 function parseCandle(candle) {
   if (!candle) return null;
-  return {
+  const parsed = {
     ...candle,
     scent_notes: JSON.parse(candle.scent_notes || '[]')
   };
+  const withCamel = addCamelCaseFields(parsed);
+  withCamel.scentNotes = parsed.scent_notes;
+  return withCamel;
 }
 
 function getAllCandles() {

@@ -10,30 +10,57 @@ import {
 
 const router = express.Router();
 
+function toCamelCase(str) {
+  return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+}
+
+function addCamelCaseFields(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const result = { ...obj };
+  for (const key of Object.keys(obj)) {
+    const camelKey = toCamelCase(key);
+    if (camelKey !== key && !(camelKey in result)) {
+      result[camelKey] = obj[key];
+    }
+  }
+  return result;
+}
+
 function parseSubscription(sub) {
   if (!sub) return null;
-  return {
+  const parsed = {
     ...sub,
     preferred_aromas: JSON.parse(sub.preferred_aromas || '[]'),
     excluded_scents: JSON.parse(sub.excluded_scents || '[]'),
     special_dates: JSON.parse(sub.special_dates || '[]')
   };
+  const withCamel = addCamelCaseFields(parsed);
+  withCamel.preferredAromas = parsed.preferred_aromas;
+  withCamel.excludedScents = parsed.excluded_scents;
+  withCamel.specialDates = parsed.special_dates;
+  return withCamel;
 }
 
 function parseDelivery(delivery) {
   if (!delivery) return null;
-  return {
+  const parsed = {
     ...delivery,
     conflict_warnings: JSON.parse(delivery.conflict_warnings || '[]')
   };
+  const withCamel = addCamelCaseFields(parsed);
+  withCamel.conflictWarnings = parsed.conflict_warnings;
+  return withCamel;
 }
 
 function parseCandle(candle) {
   if (!candle) return null;
-  return {
+  const parsed = {
     ...candle,
     scent_notes: JSON.parse(candle.scent_notes || '[]')
   };
+  const withCamel = addCamelCaseFields(parsed);
+  withCamel.scentNotes = parsed.scent_notes;
+  return withCamel;
 }
 
 router.get('/candles', (req, res) => {
@@ -103,10 +130,14 @@ router.get('/:id', (req, res) => {
     );
 
     const parsedSub = parseSubscription(subscription);
-    const parsedDeliveries = deliveries.map(d => ({
-      ...parseDelivery(d),
-      candle_list: d.candle_list ? d.candle_list.split(',') : []
-    }));
+    const parsedDeliveries = deliveries.map(d => {
+      const candleList = d.candle_list ? d.candle_list.split(',') : [];
+      return {
+        ...parseDelivery(d),
+        candle_list: candleList,
+        candleList: candleList
+      };
+    });
 
     res.json({
       success: true,
@@ -333,7 +364,8 @@ router.post('/:id/confirm-delivery', (req, res) => {
         subscription_id: subscription.id,
         delivery_number: plan.deliveryNumber,
         scheduled_date: plan.scheduledDate,
-        status: 'generated',
+        actual_delivery_date: new Date().toISOString().split('T')[0],
+        status: 'delivered',
         total_price: plan.totalPrice,
         candle_count: plan.candleCount,
         estimated_burn_days: plan.estimatedBurnDays,
@@ -398,15 +430,19 @@ router.post('/:id/confirm-delivery', (req, res) => {
       [result]
     );
 
+    const candleList = delivery.candle_list ? delivery.candle_list.split(',') : [];
+    const parsedContents = contents.map(c => addCamelCaseFields({
+      ...c,
+      match_score: parseFloat(c.match_score)
+    }));
+    
     res.json({
       success: true,
       data: {
         ...parseDelivery(delivery),
-        candle_list: delivery.candle_list ? delivery.candle_list.split(',') : [],
-        contents: contents.map(c => ({
-          ...c,
-          match_score: parseFloat(c.match_score)
-        }))
+        candle_list: candleList,
+        candleList: candleList,
+        contents: parsedContents
       }
     });
   } catch (error) {
