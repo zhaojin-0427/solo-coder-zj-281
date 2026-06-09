@@ -81,43 +81,60 @@ router.get('/:id', (req, res) => {
 
 router.post('/', (req, res) => {
   try {
-    const { formulaId, date, skinConditionBefore, skinConditionAfter, reactions = [], notes, rating } = req.body;
+    const { 
+      formulaId, 
+      date, 
+      usageDate,
+      skinConditionBefore, 
+      skinConditionAfter, 
+      skinCondition,
+      absorption,
+      sensitivity,
+      improvement,
+      reactions = [], 
+      notes, 
+      rating 
+    } = req.body;
 
-    if (!date) {
+    const recordDate = date || usageDate;
+    if (!recordDate) {
       return res.status(400).json({ success: false, error: '使用日期不能为空' });
+    }
+    if (!formulaId) {
+      return res.status(400).json({ success: false, error: '请选择配方' });
+    }
+    if (!absorption || !sensitivity || !improvement) {
+      return res.status(400).json({ success: false, error: '请完成所有评分' });
     }
 
     const recordId = transaction(() => {
       const id = insert('usage_records', {
         formula_id: formulaId || null,
-        date,
+        date: recordDate,
         skin_condition_before: skinConditionBefore || null,
         skin_condition_after: skinConditionAfter || null,
+        skin_condition: skinCondition || null,
+        absorption,
+        sensitivity,
+        improvement,
         reactions: JSON.stringify(reactions),
         notes: notes || null,
-        rating: rating || null
+        rating: rating || improvement || null
       });
 
-      if (formulaId && reactions.length > 0) {
-        const ingredients = query(
-          'SELECT ingredient_id FROM formula_ingredients WHERE formula_id = ?',
-          [formulaId]
-        );
+      const ingredients = query(
+        'SELECT ingredient_id FROM formula_ingredients WHERE formula_id = ?',
+        [formulaId]
+      );
 
-        reactions.forEach(reaction => {
-          const reactionType = typeof reaction === 'string' ? reaction : reaction.type;
-          const severity = typeof reaction === 'object' ? reaction.severity : null;
-
-          ingredients.forEach(ing => {
-            insert('ingredient_reactions', {
-              ingredient_id: ing.ingredient_id,
-              reaction_type: reactionType,
-              description: typeof reaction === 'object' ? reaction.description || null : null,
-              severity: severity || 3
-            });
-          });
+      ingredients.forEach(ing => {
+        insert('ingredient_reactions', {
+          record_id: id,
+          ingredient_id: ing.ingredient_id,
+          sensitivity,
+          improvement
         });
-      }
+      });
 
       return id;
     });

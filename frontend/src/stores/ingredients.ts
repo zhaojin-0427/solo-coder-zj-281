@@ -1,20 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
-import axios from 'axios'
-
-export interface Ingredient {
-  id: number
-  name: string
-  category: string
-  description: string
-  effects: string[]
-  safetyRating: number
-  suitableSkinTypes: string[]
-  createdAt: string
-}
+import { ingredients as ingredientsApi } from '@/api'
+import type { Ingredient, IngredientType } from '@/types'
 
 export interface Filter {
-  category?: string
+  type?: IngredientType
   safetyRating?: number
   skinType?: string
   keyword?: string
@@ -29,9 +19,7 @@ export const useIngredientsStore = defineStore('ingredients', () => {
   const fetchList = async () => {
     loading.value = true
     try {
-      const params = { ...filter }
-      const res = await axios.get<Ingredient[]>('/api/ingredients', { params })
-      list.value = res.data
+      list.value = await ingredientsApi.getList(filter.type)
     } finally {
       loading.value = false
     }
@@ -40,8 +28,7 @@ export const useIngredientsStore = defineStore('ingredients', () => {
   const fetchDetail = async (id: number) => {
     loading.value = true
     try {
-      const res = await axios.get<Ingredient>(`/api/ingredients/${id}`)
-      currentDetail.value = res.data
+      currentDetail.value = await ingredientsApi.getDetail(id)
     } finally {
       loading.value = false
     }

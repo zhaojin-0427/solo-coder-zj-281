@@ -1,15 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import { records as recordsApi } from '@/api'
 import type { UsageRecord, UsageRecordCreateInput } from '@/types'
 
 export interface RecordCreate {
   formulaId: number | null
   date: string
   skinCondition: string
-  absorptionRating: number
-  sensitivityRating: number
-  improvementRating: number
+  absorption: number
+  sensitivity: number
+  improvement: number
   notes: string
 }
 
@@ -20,8 +20,8 @@ export const useRecordsStore = defineStore('records', () => {
   const fetchList = async () => {
     loading.value = true
     try {
-      const res = await axios.get<UsageRecord[]>('/api/records')
-      list.value = res.data
+      const data = await recordsApi.getList()
+      list.value = data
     } finally {
       loading.value = false
     }
@@ -31,17 +31,17 @@ export const useRecordsStore = defineStore('records', () => {
     loading.value = true
     try {
       const input: UsageRecordCreateInput = {
-        formulaId: data.formulaId,
-        date: data.date,
+        formulaId: data.formulaId!,
+        usageDate: data.date,
         skinCondition: data.skinCondition,
-        absorptionRating: data.absorptionRating,
-        sensitivityRating: data.sensitivityRating,
-        improvementRating: data.improvementRating,
-        notes: data.notes || null
+        absorption: data.absorption,
+        sensitivity: data.sensitivity,
+        improvement: data.improvement,
+        notes: data.notes || undefined
       }
-      const res = await axios.post<UsageRecord>('/api/records', input)
-      list.value.unshift(res.data)
-      return res.data
+      const record = await recordsApi.create(input)
+      list.value.unshift(record)
+      return record
     } finally {
       loading.value = false
     }
@@ -49,26 +49,26 @@ export const useRecordsStore = defineStore('records', () => {
 
   const filterByFormula = (formulaId: number | null) => {
     if (!formulaId) return list.value
-    return list.value.filter(r => r.formula_id === formulaId)
+    return list.value.filter(r => r.formulaId === formulaId)
   }
 
   const stats = computed(() => {
     const records = list.value
     const totalRecords = records.length
-    const withAbsorption = records.filter(r => r.absorption_rating !== null)
-    const withSensitivity = records.filter(r => r.sensitivity_rating !== null)
-    const withImprovement = records.filter(r => r.improvement_rating !== null)
+    const withAbsorption = records.filter(r => r.absorption !== null && r.absorption !== undefined)
+    const withSensitivity = records.filter(r => r.sensitivity !== null && r.sensitivity !== undefined)
+    const withImprovement = records.filter(r => r.improvement !== null && r.improvement !== undefined)
 
     return {
       totalRecords,
       avgAbsorption: withAbsorption.length
-        ? withAbsorption.reduce((sum, r) => sum + (r.absorption_rating || 0), 0) / withAbsorption.length
+        ? withAbsorption.reduce((sum, r) => sum + (r.absorption || 0), 0) / withAbsorption.length
         : 0,
       avgSensitivity: withSensitivity.length
-        ? withSensitivity.reduce((sum, r) => sum + (r.sensitivity_rating || 0), 0) / withSensitivity.length
+        ? withSensitivity.reduce((sum, r) => sum + (r.sensitivity || 0), 0) / withSensitivity.length
         : 0,
       avgImprovement: withImprovement.length
-        ? withImprovement.reduce((sum, r) => sum + (r.improvement_rating || 0), 0) / withImprovement.length
+        ? withImprovement.reduce((sum, r) => sum + (r.improvement || 0), 0) / withImprovement.length
         : 0
     }
   })

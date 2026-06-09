@@ -217,7 +217,7 @@ const addUsageRecord = async () => {
   try {
     await records.create({
       formulaId: formula.value.id,
-      date: new Date().toISOString().split('T')[0],
+      usageDate: new Date().toISOString().split('T')[0],
       notes: null
     })
     showRecordModal.value = false

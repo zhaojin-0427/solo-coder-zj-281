@@ -1,52 +1,18 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import axios from 'axios'
-
-export interface FormulaIngredient {
-  id: number
-  name: string
-  percentage: number
-}
-
-export interface Formula {
-  id: number
-  name: string
-  description: string
-  ingredients: FormulaIngredient[]
-  suitableSkinTypes: string[]
-  efficacy: string[]
-  createdAt: string
-  updatedAt: string
-}
-
-export interface FormulaCreate {
-  name: string
-  description: string
-  ingredients: { id: number; percentage: number }[]
-  suitableSkinTypes: string[]
-  efficacy: string[]
-}
-
-export interface AnalysisResult {
-  overallScore: number
-  safetyScore: number
-  efficacyScore: number
-  stabilityScore: number
-  recommendations: string[]
-  warnings: string[]
-}
+import { formulas as formulasApi } from '@/api'
+import type { Formula, FormulaCreateInput, FormulaUpdateInput, FormulaAnalysis, FormulaIngredientInput } from '@/types'
 
 export const useFormulasStore = defineStore('formulas', () => {
   const list = ref<Formula[]>([])
   const loading = ref(false)
   const currentDetail = ref<Formula | null>(null)
-  const analysisResult = ref<AnalysisResult | null>(null)
+  const analysisResult = ref<FormulaAnalysis | null>(null)
 
   const fetchList = async () => {
     loading.value = true
     try {
-      const res = await axios.get<Formula[]>('/api/formulas')
-      list.value = res.data
+      list.value = await formulasApi.getList()
     } finally {
       loading.value = false
     }
@@ -55,34 +21,33 @@ export const useFormulasStore = defineStore('formulas', () => {
   const fetchDetail = async (id: number) => {
     loading.value = true
     try {
-      const res = await axios.get<Formula>(`/api/formulas/${id}`)
-      currentDetail.value = res.data
+      currentDetail.value = await formulasApi.getDetail(id)
     } finally {
       loading.value = false
     }
   }
 
-  const create = async (data: FormulaCreate) => {
+  const create = async (data: FormulaCreateInput) => {
     loading.value = true
     try {
-      const res = await axios.post<Formula>('/api/formulas', data)
-      list.value.unshift(res.data)
-      return res.data
+      const newFormula = await formulasApi.create(data)
+      list.value.unshift(newFormula)
+      return newFormula
     } finally {
       loading.value = false
     }
   }
 
-  const update = async (id: number, data: Partial<FormulaCreate>) => {
+  const update = async (id: number, data: FormulaUpdateInput) => {
     loading.value = true
     try {
-      const res = await axios.put<Formula>(`/api/formulas/${id}`, data)
+      const updatedFormula = await formulasApi.update(id, data)
       const index = list.value.findIndex(item => item.id === id)
       if (index !== -1) {
-        list.value[index] = res.data
+        list.value[index] = updatedFormula
       }
-      currentDetail.value = res.data
-      return res.data
+      currentDetail.value = updatedFormula
+      return updatedFormula
     } finally {
       loading.value = false
     }
@@ -91,7 +56,7 @@ export const useFormulasStore = defineStore('formulas', () => {
   const remove = async (id: number) => {
     loading.value = true
     try {
-      await axios.delete(`/api/formulas/${id}`)
+      await formulasApi.remove(id)
       list.value = list.value.filter(item => item.id !== id)
       if (currentDetail.value?.id === id) {
         currentDetail.value = null
@@ -101,12 +66,12 @@ export const useFormulasStore = defineStore('formulas', () => {
     }
   }
 
-  const analyze = async (id: number) => {
+  const analyze = async (baseOils: FormulaIngredientInput[] = [], essentialOils: FormulaIngredientInput[] = []) => {
     loading.value = true
     try {
-      const res = await axios.post<AnalysisResult>(`/api/formulas/${id}/analyze`)
-      analysisResult.value = res.data
-      return res.data
+      const result = await formulasApi.analyze(baseOils, essentialOils)
+      analysisResult.value = result
+      return result
     } finally {
       loading.value = false
     }

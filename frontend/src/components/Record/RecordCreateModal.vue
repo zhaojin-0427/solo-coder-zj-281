@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { X, Calendar, Droplets, Zap, Heart, FileText } from 'lucide-vue-next'
+import { X, Calendar, Droplets, Zap, Heart, FileText, User } from 'lucide-vue-next'
 import StarRating from '@/components/Common/StarRating.vue'
 import { useFormulasStore } from '@/stores/formulas'
 import { useRecordsStore } from '@/stores/records'
@@ -31,9 +31,9 @@ const loadingFormulas = ref(false)
 
 const formulaId = ref<number | null>(null)
 const date = ref(new Date().toISOString().split('T')[0])
-const absorptionRating = ref(0)
-const sensitivityRating = ref(0)
-const improvementRating = ref(0)
+const absorption = ref(0)
+const sensitivity = ref(0)
+const improvement = ref(0)
 const skinCondition = ref('')
 const notes = ref('')
 
@@ -41,9 +41,9 @@ const canSubmit = computed(() => {
   return (
     formulaId.value !== null &&
     date.value &&
-    absorptionRating.value > 0 &&
-    sensitivityRating.value > 0 &&
-    improvementRating.value > 0 &&
+    absorption.value > 0 &&
+    sensitivity.value > 0 &&
+    improvement.value > 0 &&
     skinCondition.value
   )
 })
@@ -55,9 +55,9 @@ const closeModal = () => {
 const resetForm = () => {
   formulaId.value = null
   date.value = new Date().toISOString().split('T')[0]
-  absorptionRating.value = 0
-  sensitivityRating.value = 0
-  improvementRating.value = 0
+  absorption.value = 0
+  sensitivity.value = 0
+  improvement.value = 0
   skinCondition.value = ''
   notes.value = ''
 }
@@ -84,9 +84,9 @@ const createRecord = async () => {
       formulaId: formulaId.value,
       date: date.value,
       skinCondition: skinCondition.value,
-      absorptionRating: absorptionRating.value,
-      sensitivityRating: sensitivityRating.value,
-      improvementRating: improvementRating.value,
+      absorption: absorption.value,
+      sensitivity: sensitivity.value,
+      improvement: improvement.value,
       notes: notes.value
     })
     emit('success')
@@ -184,7 +184,7 @@ watch(() => props.visible, (val) => {
               <span class="font-medium text-emerald-800">吸收度</span>
               <span class="text-red-500">*</span>
             </div>
-            <StarRating v-model="absorptionRating" color="primary" />
+            <StarRating v-model="absorption" color="primary" />
           </div>
 
           <div class="bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl p-4 border border-rose-100">
@@ -193,7 +193,7 @@ watch(() => props.visible, (val) => {
               <span class="font-medium text-rose-800">敏感度</span>
               <span class="text-red-500">*</span>
             </div>
-            <StarRating v-model="sensitivityRating" color="warning" />
+            <StarRating v-model="sensitivity" color="warning" />
           </div>
 
           <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border border-amber-100">
@@ -202,7 +202,7 @@ watch(() => props.visible, (val) => {
               <span class="font-medium text-amber-800">改善效果</span>
               <span class="text-red-500">*</span>
             </div>
-            <StarRating v-model="improvementRating" color="warning" />
+            <StarRating v-model="improvement" color="warning" />
           </div>
 
           <div>

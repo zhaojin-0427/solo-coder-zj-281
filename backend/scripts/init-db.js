@@ -73,6 +73,10 @@ db.exec(`
     date TEXT NOT NULL,
     skin_condition_before TEXT,
     skin_condition_after TEXT,
+    skin_condition TEXT,
+    absorption INTEGER CHECK(absorption BETWEEN 1 AND 5),
+    sensitivity INTEGER CHECK(sensitivity BETWEEN 1 AND 5),
+    improvement INTEGER CHECK(improvement BETWEEN 1 AND 5),
     reactions TEXT NOT NULL DEFAULT '[]',
     notes TEXT,
     rating INTEGER CHECK(rating BETWEEN 1 AND 5),
@@ -82,11 +86,15 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS ingredient_reactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    record_id INTEGER NOT NULL,
     ingredient_id INTEGER NOT NULL,
-    reaction_type TEXT NOT NULL,
+    reaction_type TEXT,
     description TEXT,
     severity INTEGER CHECK(severity BETWEEN 1 AND 5),
+    sensitivity INTEGER CHECK(sensitivity BETWEEN 1 AND 5),
+    improvement INTEGER CHECK(improvement BETWEEN 1 AND 5),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (record_id) REFERENCES usage_records(id) ON DELETE CASCADE,
     FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE
   );
 
@@ -403,8 +411,8 @@ const insertFormulaIngredient = db.prepare(`
 `);
 
 const insertUsageRecord = db.prepare(`
-  INSERT INTO usage_records (formula_id, date, skin_condition_before, skin_condition_after, reactions, notes, rating)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO usage_records (formula_id, date, skin_condition_before, skin_condition_after, skin_condition, absorption, sensitivity, improvement, reactions, notes, rating)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const formulas = [
@@ -520,6 +528,10 @@ const usageRecords = [
     date: '2026-06-01',
     skinConditionBefore: '肌肤干燥，有轻微泛红',
     skinConditionAfter: '泛红减轻，肌肤感觉滋润',
+    skinCondition: '正常',
+    absorption: 4,
+    sensitivity: 2,
+    improvement: 4,
     reactions: [],
     notes: '使用后感觉很舒缓，没有刺激感',
     rating: 4
@@ -529,6 +541,10 @@ const usageRecords = [
     date: '2026-06-03',
     skinConditionBefore: '泛红有所改善，但仍干燥',
     skinConditionAfter: '持续使用中，肌肤状态稳定',
+    skinCondition: '正常',
+    absorption: 5,
+    sensitivity: 1,
+    improvement: 5,
     reactions: [],
     notes: '配合保湿喷雾使用效果更好',
     rating: 5
@@ -538,6 +554,10 @@ const usageRecords = [
     date: '2026-06-02',
     skinConditionBefore: 'T区出油严重，有几颗痘痘',
     skinConditionAfter: '痘痘有所收敛，出油减少',
+    skinCondition: '油腻',
+    absorption: 4,
+    sensitivity: 2,
+    improvement: 4,
     reactions: ['轻微清凉感'],
     notes: '点涂痘痘效果不错',
     rating: 4
@@ -547,6 +567,10 @@ const usageRecords = [
     date: '2026-06-04',
     skinConditionBefore: '痘痘改善中，仍有痘印',
     skinConditionAfter: '痘印有所淡化',
+    skinCondition: '痘痘',
+    absorption: 4,
+    sensitivity: 2,
+    improvement: 4,
     reactions: [],
     notes: '建议配合防晒使用',
     rating: 4
@@ -556,6 +580,10 @@ const usageRecords = [
     date: '2026-06-01',
     skinConditionBefore: '肌肤松弛，有细纹',
     skinConditionAfter: '感觉肌肤紧致了一些',
+    skinCondition: '正常',
+    absorption: 5,
+    sensitivity: 1,
+    improvement: 5,
     reactions: ['温热感'],
     notes: '配合按摩手法，吸收很好',
     rating: 5
@@ -565,6 +593,10 @@ const usageRecords = [
     date: '2026-06-02',
     skinConditionBefore: '肤色暗沉，无光泽',
     skinConditionAfter: '感觉肤色提亮了',
+    skinCondition: '敏感',
+    absorption: 3,
+    sensitivity: 4,
+    improvement: 3,
     reactions: ['轻微刺痛感'],
     notes: '初次使用有轻微刺痛，可能需要建立耐受',
     rating: 3
@@ -574,6 +606,10 @@ const usageRecords = [
     date: '2026-06-05',
     skinConditionBefore: '压力大，难以入眠',
     skinConditionAfter: '感觉放松了很多',
+    skinCondition: '正常',
+    absorption: 5,
+    sensitivity: 1,
+    improvement: 5,
     reactions: ['放松感'],
     notes: '睡前使用，配合深呼吸，入睡更快了',
     rating: 5
@@ -583,6 +619,10 @@ const usageRecords = [
     date: '2026-06-07',
     skinConditionBefore: '焦虑，睡眠质量差',
     skinConditionAfter: '睡眠质量有所改善',
+    skinCondition: '正常',
+    absorption: 5,
+    sensitivity: 1,
+    improvement: 4,
     reactions: [],
     notes: '持续使用中，效果稳定',
     rating: 5
@@ -596,6 +636,10 @@ usageRecords.forEach((record, index) => {
     record.date,
     record.skinConditionBefore,
     record.skinConditionAfter,
+    record.skinCondition,
+    record.absorption,
+    record.sensitivity,
+    record.improvement,
     JSON.stringify(record.reactions),
     record.notes,
     record.rating

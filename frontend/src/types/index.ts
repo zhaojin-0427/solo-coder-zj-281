@@ -86,32 +86,38 @@ export interface UsageRecordFormula {
 export interface UsageRecord {
   id: number;
   formula_id: number | null;
+  formulaId: number | null;
   date: string;
+  usageDate: string;
   skin_condition_before: string | null;
   skin_condition_after: string | null;
   skin_condition: string | null;
+  skinCondition: string | null;
   reactions: (string | Reaction)[];
   notes: string | null;
   rating: number | null;
   absorption_rating: number | null;
   sensitivity_rating: number | null;
   improvement_rating: number | null;
+  absorption: number | null;
+  sensitivity: number | null;
+  improvement: number | null;
   created_at: string;
   formula: UsageRecordFormula | null;
 }
 
 export interface UsageRecordCreateInput {
   formulaId?: number | null;
-  date: string;
+  usageDate: string;
   skinConditionBefore?: string | null;
   skinConditionAfter?: string | null;
   skinCondition?: string | null;
   reactions?: (string | Reaction)[];
   notes?: string | null;
   rating?: number | null;
-  absorptionRating?: number | null;
-  sensitivityRating?: number | null;
-  improvementRating?: number | null;
+  absorption?: number | null;
+  sensitivity?: number | null;
+  improvement?: number | null;
 }
 
 export interface SkinTypeInfo {
