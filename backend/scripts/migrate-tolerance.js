@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3';
+import fs from 'fs';
+import { db } from '../src/db/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,11 +14,7 @@ if (!fs.existsSync(dbPath)) {
   process.exit(1);
 }
 
-const db = new Database(dbPath);
 console.log('数据库连接成功:', dbPath);
-
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS tolerance_plans (
