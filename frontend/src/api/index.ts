@@ -35,6 +35,23 @@ import type {
   RiskWarningsResponse,
   CalendarDay,
   ScheduleSourceType,
+  TolerancePlan,
+  TolerancePlanCreateInput,
+  TolerancePlanUpdateInput,
+  TolerancePlanConfigPreview,
+  ToleranceDailyFeedback,
+  ToleranceDailyFeedbackInput,
+  ToleranceDailyFeedbackResponse,
+  ToleranceInterruption,
+  ToleranceInterruptionInput,
+  ToleranceResumeInput,
+  PhaseEvaluation,
+  PhaseProceedInput,
+  FinalEvaluationResult,
+  ToleranceStatsSummary,
+  ToleranceSourceType,
+  TolerancePlanStatus,
+  TolerancePlanPhase,
 } from '../types';
 
 export const ingredients = {
@@ -257,6 +274,78 @@ export const schedules = {
   },
 };
 
+export const tolerance = {
+  getList: (params?: {
+    sourceType?: ToleranceSourceType;
+    sourceId?: number;
+    status?: TolerancePlanStatus;
+  }) => {
+    return get<TolerancePlan[]>('/api/tolerance', { params });
+  },
+
+  getDetail: (id: number) => {
+    return get<TolerancePlan>(`/api/tolerance/${id}`);
+  },
+
+  getPreview: (params: {
+    sourceType: ToleranceSourceType;
+    sourceId: number;
+    cycleType?: string;
+    customDays?: number;
+    startDate?: string;
+    initialFrequency?: string;
+    initialDrops?: number;
+    skinSensitivityLevel?: number;
+  }) => {
+    return get<TolerancePlanConfigPreview>('/api/tolerance/preview', { params });
+  },
+
+  create: (data: TolerancePlanCreateInput) => {
+    return post<TolerancePlan>('/api/tolerance', data);
+  },
+
+  update: (id: number, data: TolerancePlanUpdateInput) => {
+    return put<TolerancePlan>(`/api/tolerance/${id}`, data);
+  },
+
+  remove: (id: number) => {
+    return del<{ id: number }>(`/api/tolerance/${id}`);
+  },
+
+  submitFeedback: (id: number, data: ToleranceDailyFeedbackInput) => {
+    return post<ToleranceDailyFeedbackResponse>(`/api/tolerance/${id}/feedback`, data);
+  },
+
+  evaluatePhase: (planId: number, phaseId: number) => {
+    return post<PhaseEvaluation>(`/api/tolerance/${planId}/phase/${phaseId}/evaluate`);
+  },
+
+  proceedPhase: (planId: number, phaseId: number, data: PhaseProceedInput = {}) => {
+    return post<{
+      extended?: boolean;
+      completed?: boolean;
+      phase?: TolerancePlanPhase;
+      nextPhase?: TolerancePlanPhase | null;
+    }>(`/api/tolerance/${planId}/phase/${phaseId}/proceed`, data);
+  },
+
+  interrupt: (id: number, data: ToleranceInterruptionInput) => {
+    return post<ToleranceInterruption>(`/api/tolerance/${id}/interrupt`, data);
+  },
+
+  resume: (id: number, data: ToleranceResumeInput) => {
+    return post<ToleranceInterruption>(`/api/tolerance/${id}/resume`, data);
+  },
+
+  evaluate: (id: number) => {
+    return post<FinalEvaluationResult>(`/api/tolerance/${id}/evaluate`);
+  },
+
+  getStats: () => {
+    return get<ToleranceStatsSummary>('/api/tolerance/stats/summary');
+  },
+};
+
 export default {
   ingredients,
   formulas,
@@ -266,4 +355,5 @@ export default {
   candles,
   subscriptions,
   schedules,
+  tolerance,
 };

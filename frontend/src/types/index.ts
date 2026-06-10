@@ -689,3 +689,316 @@ export interface CalendarDay {
   scheduleCount: number;
   schedules: Schedule[];
 }
+
+export type ToleranceSourceType = 'formula' | 'ingredient';
+export type ToleranceCycleType = '7days' | '14days' | 'custom';
+export type TolerancePlanStatus = 'active' | 'paused' | 'completed' | 'interrupted' | 'failed';
+export type TolerancePhaseStatus = 'pending' | 'in_progress' | 'completed' | 'extended' | 'interrupted';
+export type ToleranceFrequencyType = 'every_two_days' | 'every_other_day' | 'daily' | 'twice_daily';
+export type InterruptionSeverity = 'mild' | 'moderate' | 'severe';
+export type AdaptationLevel = 'not_adapted' | 'poorly_adapted' | 'needs_more_data' | 'moderately_adapted' | 'well_adapted';
+
+export interface TolerancePlanRiskWarning {
+  level: 'info' | 'warning' | 'danger';
+  type: string;
+  message: string;
+}
+
+export interface TolerancePlanInsights {
+  skinSensitivityLevel: number;
+  hasSensitivityHistory: boolean;
+  hasReactionHistory: boolean;
+  riskLevel: 'low' | 'medium' | 'high';
+  recommendations: string[];
+}
+
+export interface TolerancePlanPhase {
+  id?: number;
+  planId?: number;
+  plan_id?: number;
+  phaseNumber: number;
+  phase_number?: number;
+  name: string;
+  description?: string;
+  startDate: string;
+  start_date?: string;
+  endDate: string;
+  end_date?: string;
+  durationDays: number;
+  duration_days?: number;
+  frequency: ToleranceFrequencyType;
+  drops: number;
+  goals: string[];
+  status: TolerancePhaseStatus;
+  completedAt?: string;
+  completed_at?: string;
+  extensionDays?: number;
+  extension_days?: number;
+  extensionReason?: string;
+  extension_reason?: string;
+  pauseConditions: string[];
+  pause_conditions?: string;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+  extendedDays?: number;
+  phaseGoal?: string;
+  completionCriteria?: string;
+  evaluationResult?: string;
+}
+
+export interface ToleranceDailyFeedback {
+  id?: number;
+  planId: number;
+  plan_id?: number;
+  phaseId: number;
+  phase_id?: number;
+  feedbackDate: string;
+  feedback_date?: string;
+  used: number;
+  actualDrops?: number;
+  actual_drops?: number;
+  skinCondition?: string;
+  skin_condition?: string;
+  reactions: (string | Reaction)[];
+  sensitivity?: number;
+  comfort?: number;
+  absorption?: number;
+  notes?: string;
+  createdAt?: string;
+  created_at?: string;
+}
+
+export interface ToleranceInterruption {
+  id?: number;
+  planId: number;
+  plan_id?: number;
+  phaseId?: number;
+  phase_id?: number;
+  interruptionDate: string;
+  interruption_date?: string;
+  startDate?: string;
+  endDate?: string;
+  reason: string;
+  severity: InterruptionSeverity;
+  symptoms: (string | Reaction)[];
+  actions?: string[];
+  resumedAt?: string;
+  resumed_at?: string;
+  resumeNotes?: string;
+  resume_notes?: string;
+  createdAt?: string;
+  created_at?: string;
+}
+
+export interface TolerancePlan {
+  id?: number;
+  name: string;
+  sourceType: ToleranceSourceType;
+  source_type?: ToleranceSourceType;
+  sourceId: number;
+  source_id?: number;
+  sourceName?: string;
+  source_name?: string;
+  cycleType: ToleranceCycleType;
+  cycle_type?: ToleranceCycleType;
+  customDays?: number;
+  custom_days?: number;
+  totalDays: number;
+  total_days?: number;
+  startDate: string;
+  start_date?: string;
+  endDate: string;
+  end_date?: string;
+  initialFrequency: ToleranceFrequencyType;
+  initial_frequency?: ToleranceFrequencyType;
+  initialDrops: number;
+  initial_drops?: number;
+  observationIndicators: string[];
+  observation_indicators?: string;
+  phaseGoals: string[];
+  phase_goals?: string;
+  skinSensitivityLevel: number;
+  skin_sensitivity_level?: number;
+  status: TolerancePlanStatus;
+  currentPhase: number;
+  current_phase?: number;
+  progressPercent: number;
+  progress_percent?: number;
+  adaptationConclusion?: string;
+  adaptation_conclusion?: string;
+  recommendation?: string;
+  notes?: string;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+  totalPhases?: number;
+  completedPhases?: number;
+  phases?: TolerancePlanPhase[];
+  feedbacks?: ToleranceDailyFeedback[];
+  interruptions?: ToleranceInterruption[];
+  currentPhaseData?: TolerancePlanPhase;
+  riskWarnings?: string[];
+  insights?: TolerancePlanInsights;
+  finalResult?: FinalEvaluationResult;
+  currentDay?: number;
+  observationMetrics?: string[];
+}
+
+export interface TolerancePlanCreateInput {
+  sourceType: ToleranceSourceType;
+  sourceId: number;
+  cycleType: ToleranceCycleType;
+  customDays?: number;
+  startDate: string;
+  initialFrequency: ToleranceFrequencyType;
+  initialDrops: number;
+  observationIndicators?: string[];
+  phaseGoals?: string[];
+  skinSensitivityLevel?: number;
+  notes?: string;
+}
+
+export interface TolerancePlanUpdateInput {
+  name?: string;
+  notes?: string;
+  status?: TolerancePlanStatus;
+}
+
+export interface ToleranceDailyFeedbackInput {
+  phaseId: number;
+  feedbackDate: string;
+  used?: boolean;
+  actualDrops?: number;
+  skinCondition?: string;
+  reactions?: (string | Reaction)[];
+  sensitivity?: number;
+  comfort?: number;
+  absorption?: number;
+  notes?: string;
+}
+
+export interface ToleranceInterruptionInput {
+  phaseId?: number;
+  interruptionDate: string;
+  reason: string;
+  severity: InterruptionSeverity;
+  symptoms?: (string | Reaction)[];
+  resumeNotes?: string;
+  actions?: string[];
+}
+
+export interface ToleranceResumeInput {
+  interruptionId?: number;
+  resumeDate?: string;
+  resumeNotes?: string;
+}
+
+export interface PhaseProceedInput {
+  extendDays?: number;
+  extendReason?: string;
+}
+
+export interface PauseConditionWarning {
+  type: string;
+  message: string;
+  severity: 'warning' | 'danger';
+}
+
+export interface PhaseEvaluation {
+  phaseId: number;
+  completionRate: number;
+  actualUsedDays: number;
+  totalExpectedDays: number;
+  avgSensitivity: number;
+  avgComfort: number;
+  hasAdverseReactions: boolean;
+  interruptionCount: number;
+  canProceed: boolean;
+  needsExtension: boolean;
+  shouldSuspend: boolean;
+  recommendation: {
+    action: 'proceed' | 'extend' | 'suspend' | 'observe';
+    message: string;
+    severity: 'success' | 'warning' | 'danger' | 'info';
+  };
+  feedbacks: ToleranceDailyFeedback[];
+}
+
+export interface FinalEvaluationResult {
+  planId: number;
+  adaptationLevel: AdaptationLevel;
+  conclusion: string;
+  recommendation: string;
+  maxToleratedDrops: number;
+  recommendedFrequency: ToleranceFrequencyType;
+  summary: string;
+  suggestions: string[];
+  scores: {
+    completionRate: number;
+    sensitivityScore: number;
+    comfortScore: number;
+    absorptionScore: number;
+    safetyScore: number;
+    overallScore: number;
+  };
+  stats: {
+    totalDays: number;
+    actualUsedDays: number;
+    completionRate: number;
+    phaseCompletionRate: number;
+    avgSensitivity: number;
+    avgComfort: number;
+    avgAbsorption: number;
+    severeInterruptions: number;
+    moderateInterruptions: number;
+    mildInterruptions: number;
+  };
+  phases: TolerancePlanPhase[];
+  feedbacks: ToleranceDailyFeedback[];
+  interruptions: ToleranceInterruption[];
+}
+
+export interface TolerancePlanConfigPreview {
+  name: string;
+  sourceType: ToleranceSourceType;
+  sourceId: number;
+  sourceName: string;
+  cycleType: ToleranceCycleType;
+  customDays?: number;
+  totalDays: number;
+  startDate: string;
+  endDate: string;
+  initialFrequency: ToleranceFrequencyType;
+  initialDrops: number;
+  observationIndicators: string[];
+  phaseGoals: string[];
+  skinSensitivityLevel: number;
+  status: TolerancePlanStatus;
+  currentPhase: number;
+  progressPercent: number;
+  notes?: string;
+  phases: TolerancePlanPhase[];
+  riskWarnings: TolerancePlanRiskWarning[];
+  insights: TolerancePlanInsights;
+}
+
+export interface ToleranceStatsSummary {
+  totalPlans: number;
+  activePlans: number;
+  completedPlans: number;
+  interruptedPlans: number;
+  pausedPlans: number;
+  failedPlans: number;
+  avgProgress: number;
+  todayFeedbackCount: number;
+}
+
+export interface ToleranceDailyFeedbackResponse {
+  success: boolean;
+  data: ToleranceDailyFeedback;
+  pauseWarnings: PauseConditionWarning[];
+  progressPercent: number;
+}

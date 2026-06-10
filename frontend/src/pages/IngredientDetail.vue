@@ -18,13 +18,17 @@ import {
 import { ingredients } from '@/api'
 import type { Ingredient } from '@/types'
 import { cn } from '@/lib/utils'
+import TolerancePlanCreateModal from '@/components/Tolerance/TolerancePlanCreateModal.vue'
+import { useToleranceStore } from '@/stores/tolerance'
 
 const route = useRoute()
 const router = useRouter()
 const ingredientId = computed(() => Number(route.params.id))
+const toleranceStore = useToleranceStore()
 
 const loading = ref(false)
 const ingredient = ref<Ingredient | null>(null)
+const showToleranceModal = ref(false)
 
 const fetchIngredient = async () => {
   loading.value = true
@@ -335,6 +339,44 @@ onMounted(() => {
           </div>
         </div>
       </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold text-stone-800 flex items-center gap-2">
+              <Shield :size="20" class="text-amber-500" />
+              耐受建立
+            </h3>
+            <p class="text-sm text-stone-500 mt-1">
+              {{ ingredient.safety_level >= 4 ? '该成分刺激性较强，建议先建立皮肤耐受性' : '科学建立耐受，降低刺激风险' }}
+            </p>
+          </div>
+          <button
+            @click="showToleranceModal = true"
+            :class="[
+              'px-6 py-3 rounded-xl transition-all flex items-center gap-2 font-medium',
+              ingredient.safety_level >= 4
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-200'
+                : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-200'
+            ]"
+          >
+            <Shield :size="18" />
+            <span>开始耐受计划</span>
+          </button>
+        </div>
+      </div>
     </div>
+
+    <TolerancePlanCreateModal
+      v-model:visible="showToleranceModal"
+      :prefill-data="{
+        sourceType: 'ingredient',
+        sourceId: ingredientId,
+        sourceName: ingredient?.name || '',
+        name: ingredient ? `「${ingredient.name}」耐受计划` : '',
+        skinSensitivityLevel: ingredient?.safety_level || 3
+      }"
+      @success="toleranceStore.fetchList"
+    />
   </div>
 </template>

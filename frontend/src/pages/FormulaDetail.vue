@@ -26,8 +26,12 @@ import RiskWarningList from '@/components/Common/RiskWarningList.vue'
 import ScheduleCreateModal from '@/components/Schedule/ScheduleCreateModal.vue'
 import ScheduleCalendar from '@/components/Schedule/ScheduleCalendar.vue'
 import { useSchedulesStore } from '@/stores/schedules'
+import TolerancePlanCreateModal from '@/components/Tolerance/TolerancePlanCreateModal.vue'
+import { useToleranceStore } from '@/stores/tolerance'
+import { Shield } from 'lucide-vue-next'
 
 const route = useRoute()
+const toleranceStore = useToleranceStore()
 const router = useRouter()
 const formulaId = computed(() => Number(route.params.id))
 
@@ -45,6 +49,7 @@ const riskWarnings = ref<FormulaRiskWarning[]>([])
 const schedulesStore = useSchedulesStore()
 const showScheduleModal = ref(false)
 const showScheduleCalendar = ref(false)
+const showToleranceModal = ref(false)
 
 const editName = ref('')
 const editDescription = ref<string | null>('')
@@ -656,6 +661,13 @@ onMounted(() => {
             <span>创建使用计划</span>
           </button>
           <button
+            @click="showToleranceModal = true"
+            class="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl shadow-lg shadow-amber-200 transition-all hover:shadow-xl"
+          >
+            <Shield :size="18" />
+            <span>开始耐受计划</span>
+          </button>
+          <button
             @click="showScheduleCalendar = !showScheduleCalendar"
             :class="[
               'flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-all',
@@ -744,6 +756,17 @@ onMounted(() => {
         usagePart: formula?.purpose || '',
       }"
       @success="schedulesStore.fetchNext30Days({ formulaId, sourceType: 'formula' })"
+    />
+
+    <TolerancePlanCreateModal
+      v-model:visible="showToleranceModal"
+      :prefill-data="{
+        sourceType: 'formula',
+        sourceId: formulaId,
+        sourceName: formula?.name || '',
+        name: formula ? `「${formula.name}」耐受计划` : ''
+      }"
+      @success="toleranceStore.fetchList"
     />
   </div>
 </template>

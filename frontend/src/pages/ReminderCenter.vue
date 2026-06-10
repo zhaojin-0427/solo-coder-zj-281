@@ -14,7 +14,7 @@
       </button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
       <div class="bg-bg-card rounded-xl p-4 flex items-center gap-4">
         <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
           <Calendar class="w-6 h-6 text-primary" />
@@ -50,6 +50,19 @@
           <div class="text-2xl font-bold text-text">{{ schedulesStore.stats?.riskCount || 0 }}</div>
           <div class="text-sm text-text-soft">风险提醒</div>
         </div>
+      </div>
+      <div
+        class="bg-bg-card rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-md transition-all border-2 border-transparent hover:border-amber-200"
+        @click="router.push('/tolerance')"
+      >
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+          <Shield class="w-6 h-6 text-white" />
+        </div>
+        <div class="flex-1">
+          <div class="text-2xl font-bold text-text">{{ toleranceStore.stats?.activePlans || 0 }}</div>
+          <div class="text-sm text-text-soft">耐受计划</div>
+        </div>
+        <ChevronRight class="w-5 h-5 text-text-muted" />
       </div>
     </div>
 
@@ -236,6 +249,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   Plus,
   Calendar,
@@ -246,9 +260,12 @@ import {
   Loader2,
   Droplets,
   Package,
-  FileText
+  FileText,
+  Shield,
+  ChevronRight
 } from 'lucide-vue-next'
 import { useSchedulesStore } from '@/stores/schedules'
+import { useToleranceStore } from '@/stores/tolerance'
 import type { Schedule, RiskType } from '@/types'
 import ScheduleCalendar from '@/components/Schedule/ScheduleCalendar.vue'
 import ScheduleCard from '@/components/Schedule/ScheduleCard.vue'
@@ -256,7 +273,9 @@ import ScheduleCreateModal from '@/components/Schedule/ScheduleCreateModal.vue'
 import LoadingSpinner from '@/components/Common/LoadingSpinner.vue'
 import EmptyState from '@/components/Common/EmptyState.vue'
 
+const router = useRouter()
 const schedulesStore = useSchedulesStore()
+const toleranceStore = useToleranceStore()
 
 const showCreateModal = ref(false)
 const editingSchedule = ref<Schedule | null>(null)
@@ -301,6 +320,7 @@ const loadData = async () => {
       schedulesStore.fetchTodayReminders(),
       schedulesStore.fetchRiskWarnings(),
       schedulesStore.fetchNext30Days(),
+      toleranceStore.fetchStats()
     ])
   } catch (e) {
     console.error('加载提醒中心数据失败', e)

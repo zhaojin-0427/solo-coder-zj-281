@@ -9,6 +9,8 @@ import Statistics from '@/pages/Statistics.vue'
 import SubscriptionList from '@/pages/SubscriptionList.vue'
 import SubscriptionDetail from '@/pages/SubscriptionDetail.vue'
 import ReminderCenter from '@/pages/ReminderCenter.vue'
+import ToleranceList from '@/views/ToleranceList.vue'
+import ToleranceDetail from '@/views/ToleranceDetail.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -64,6 +66,16 @@ const routes: RouteRecordRaw[] = [
     path: '/reminders',
     name: 'reminders',
     component: ReminderCenter
+  },
+  {
+    path: '/tolerance',
+    name: 'tolerance',
+    component: ToleranceList
+  },
+  {
+    path: '/tolerance/:id',
+    name: 'tolerance-detail',
+    component: ToleranceDetail
   }
 ]
 
